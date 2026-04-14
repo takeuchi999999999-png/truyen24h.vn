@@ -113,7 +113,8 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
   const [activeTab, setActiveTab] = useState<'info' | 'chapters' | 'comments'>('info');
   const [isShared, setIsShared] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState<Novel[]>([]);
-  const [loadingAI, setLoadingAI] = useState(true);
+  const [loadingAI, setLoadingAI] = useState(false); // false = chưa cần load
+  const [aiTriggered, setAiTriggered] = useState(false); // lazy: chỉ load khi scroll đến
   const [summary, setSummary] = useState<string>('');
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [dynamicChapters, setDynamicChapters] = useState<Chapter[]>([]);
@@ -121,17 +122,11 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
   const [donateAmount, setDonateAmount] = useState<number>(100);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
-  const [allNovelsData, setAllNovelsData] = useState<Novel[]>([]);
 
-  useEffect(() => {
-    const qNovels = query(collection(db, 'novels'));
-    const unsubscribe = onSnapshot(qNovels, (snapshot) => {
-      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel));
-      setAllNovelsData(fetched);
-    });
-    return () => unsubscribe();
-  }, []);
+  // ✅ FIX 1: Không còn fetch toàn bộ novels collection khi mở trang
+  // Similar novels & AI recs sẽ dùng dữ liệu nhỏ gọn từ Firestore khi cần
 
+  // ✅ FIX 2: Chapters — dùng novel.chapters có sẵn NGAY, chỉ append dynamic chapters khi load xong
   useEffect(() => {
     const path = `novels/${novel.id}/chapters`;
     const q = query(collection(db, path), orderBy('chapterNumber', 'asc'));
@@ -149,21 +144,32 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
     return () => unsubscribe();
   }, [novel.id]);
 
+  // Chapters tĩnh từ novel.chapters luôn có sẵn — không block UI
   const allChapters = useMemo(() => {
     const combined = [...(novel.chapters || []), ...dynamicChapters];
     return combined.sort((a, b) => a.chapterNumber - b.chapterNumber);
   }, [novel.chapters, dynamicChapters]);
 
+  // ✅ FIX 3: AI Recommendations chỉ chạy KHI user trigger (lazy load)
   useEffect(() => {
-    if (allNovelsData.length === 0) return;
+    if (!aiTriggered) return;
     const fetchAI = async () => {
       setLoadingAI(true);
-      const recs = await getAIRecommendations(novel, allNovelsData);
-      setAiRecommendations(recs);
-      setLoadingAI(false);
+      // Lấy limited novels để suggest — không fetch toàn bộ collection
+      try {
+        const { getDocs, collection: col, query: q2, limit } = await import('firebase/firestore');
+        const snap = await getDocs(q2(col(db, 'novels'), limit(30)));
+        const limitedNovels = snap.docs.map(d => ({ id: d.id, ...d.data() } as Novel));
+        const recs = await getAIRecommendations(novel, limitedNovels);
+        setAiRecommendations(recs);
+      } catch(e) {
+        console.error('AI recs error:', e);
+      } finally {
+        setLoadingAI(false);
+      }
     };
     fetchAI();
-  }, [novel, allNovelsData]);
+  }, [aiTriggered, novel]);
 
   useEffect(() => {
     if (!user) return;
@@ -235,14 +241,8 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
 
 
 
-  const similarNovels = useMemo(() => {
-    return allNovelsData.filter(n => 
-      n.id !== novel.id && (
-        n.author === novel.author || 
-        (n.genres && n.genres.some(g => novel.genres.includes(g)))
-      )
-    ).slice(0, 5);
-  }, [allNovelsData, novel]);
+  // Similar novels ẩn đi vì giờ dùng AI recs lazy load thay thế
+  const similarNovels: Novel[] = [];
 
   const getCoverUrl = (url: string | undefined, id: string) => {
     return url || `https://picsum.photos/seed/novel-${id}/400/600`;
@@ -487,6 +487,15 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
                   </div>
                   <h3 className="font-display text-4xl font-black text-text-main uppercase tracking-tighter">AI Gợi ý cho bạn</h3>
                 </div>
+                {/* Lazy trigger — chỉ gọi API khi user muốn */}
+                {!aiTriggered && !loadingAI && (
+                  <button
+                    onClick={() => setAiTriggered(true)}
+                    className="px-5 py-2.5 bg-primary/10 text-primary rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all border border-primary/20"
+                  >
+                    Xem gợi ý
+                  </button>
+                )}
                 {loadingAI && <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-primary"></div>}
               </div>
               
