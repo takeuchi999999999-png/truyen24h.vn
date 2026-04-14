@@ -193,60 +193,62 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
 
   const isChapterLocked = chapter.isVip && (!userProfile || !(userProfile.unlockedChapters || []).includes(chapter.id));
 
+  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+
+  useEffect(() => {
+    // Cleanup speech when component unmounts or chapter changes
+    return () => {
+      window.speechSynthesis.cancel();
+      setSpeechUtterance(null);
+      setIsPlaying(false);
+    };
+  }, [chapter.id]);
+
   const toggleAudio = async () => {
-    if (audioSrc) {
-      if (isPlaying) {
-        audioRef.current?.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current?.play();
-        setIsPlaying(true);
-      }
+    if (isPlaying) {
+      window.speechSynthesis.pause();
+      setIsPlaying(false);
       return;
     }
 
-    if (chapter.ttsAudioUrl) {
-      setAudioSrc(chapter.ttsAudioUrl);
+    if (window.speechSynthesis.paused && speechUtterance) {
+      window.speechSynthesis.resume();
       setIsPlaying(true);
-      setTimeout(() => {
-        if (audioRef.current) audioRef.current.play();
-      }, 100);
       return;
     }
 
-    setIsAudioLoading(true);
-    try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: chapter.title + ". " + chapter.content })
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        
-        // Upload to Firebase Storage
-        const audioRefStorage = ref(storage, `audio/novels/${novel.id}/chapters/${chapter.id}.mp3`);
-        await uploadBytes(audioRefStorage, blob);
-        const downloadUrl = await getDownloadURL(audioRefStorage);
-        
-        // Save URL to Firestore chapter
-        await setDoc(doc(db, `novels/${novel.id}/chapters/${chapter.id}`), {
-          ttsAudioUrl: downloadUrl
-        }, { merge: true });
+    // Khởi tạo giọng đọc Native của Trình Duyệt / Điện Thoại
+    window.speechSynthesis.cancel(); // Reset
+    const textToRead = chapter.title + ". " + chapter.content.replace(/\n/g, '. ');
+    
+    // Tạo chuỗi đọc
+    const utterance = new SpeechSynthesisUtterance(textToRead);
+    utterance.lang = 'vi-VN';
+    utterance.rate = 1.1; // Tốc độ tiêu chuẩn cho đọc truyện
+    utterance.pitch = 1.0;
 
-        setAudioSrc(downloadUrl);
-        setIsPlaying(true);
-        setTimeout(() => {
-          if (audioRef.current) audioRef.current.play();
-        }, 100);
-      } else {
-        alert("Có lỗi xảy ra khi tạo audio AI.");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("Hệ thống TTS hiện không phản hồi. Vui lòng thử lại sau.");
+    // Cố gắng tìm giọng nữ hoặc giọng tự nhiên nhất
+    const voices = window.speechSynthesis.getVoices();
+    const viVoices = voices.filter(v => v.lang.includes('vi'));
+    if (viVoices.length > 0) {
+      // Ưu tiên các giọng có chữ 'Premium' hoặc 'Google' hoặc 'Siri'
+      utterance.voice = viVoices.find(v => v.name.includes('Premium') || v.name.includes('Google') || v.name.includes('Siri')) || viVoices[0];
     }
-    setIsAudioLoading(false);
+
+    utterance.onend = () => {
+      setIsPlaying(false);
+      setSpeechUtterance(null);
+    };
+    
+    utterance.onerror = (e) => {
+      console.error('Lỗi TTS:', e);
+      setIsPlaying(false);
+      setSpeechUtterance(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+    setSpeechUtterance(utterance);
+    setIsPlaying(true);
   };
 
   // Auto-hide controls on scroll
