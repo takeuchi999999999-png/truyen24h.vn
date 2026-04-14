@@ -152,40 +152,40 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
           style={{ backgroundImage: `url('${bannerUrl}')` }}
         ></div>
         <div className="absolute inset-0 bg-gradient-to-t from-background-light via-background-light/40 to-transparent"></div>
-        <div className="relative z-10 max-w-[1200px] mx-auto px-8 h-full flex items-end pb-20">
+        <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 h-full flex items-end pb-12 md:pb-20">
           <div className="w-[320px] shrink-0 mr-16 hidden lg:block"></div>
           <div className="flex-1 pb-4">
-            <div className="flex flex-wrap items-center gap-3 mb-8">
-              <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl ${novel.status === 'Hoàn thành' ? 'bg-green-500 text-white' : 'bg-primary text-white'}`}>
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-6 md:mb-8 mt-20 md:mt-0">
+              <span className={`px-4 py-1.5 md:px-5 md:py-2 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-xl ${novel.status === 'Hoàn thành' ? 'bg-green-500 text-white' : 'bg-primary text-white'}`}>
                 {novel.status}
               </span>
               {novel.isHot && (
-                <span className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/30">
+                <span className="flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/30">
                   <Flame className="size-3 fill-white" />
                   Hot
                 </span>
               )}
               {novel.genres.map(genre => (
-                <span key={genre} className="px-5 py-2 bg-surface/90 backdrop-blur-md border border-black/5 rounded-full text-[10px] font-black uppercase tracking-widest text-text-main/70 shadow-sm">{genre}</span>
+                <span key={genre} className="px-4 py-1.5 md:px-5 md:py-2 bg-surface/90 backdrop-blur-md border border-black/5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-main/70 shadow-sm">{genre}</span>
               ))}
             </div>
-            <h1 className="font-display text-5xl md:text-7xl font-black leading-none mb-8 text-text-main tracking-tighter drop-shadow-2xl">{novel.title}</h1>
-            <div className="flex flex-wrap items-center gap-10 text-text-main/60 mb-12">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-black leading-tight md:leading-none mb-6 md:mb-8 text-text-main tracking-tighter drop-shadow-2xl">{novel.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 md:gap-10 text-text-main/60 mb-8 md:mb-12">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
+                <div className="p-2 bg-primary/10 rounded-xl hidden sm:block">
                   <Users className="size-5 text-primary" />
                 </div>
-                <span className="font-bold text-sm">Tác giả: <span className="text-text-main ml-1">{novel.author}</span></span>
+                <span className="font-bold text-xs md:text-sm">Tác giả: <span className="text-text-main ml-1">{novel.author}</span></span>
               </div>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-accent/10 rounded-xl">
+                <div className="p-2 bg-accent/10 rounded-xl hidden sm:block">
                   <Users className="size-5 text-accent" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm">Nhóm dịch: <span className="text-text-main ml-1">{novel.translationGroup}</span></span>
+                  <span className="font-bold text-xs md:text-sm">Nhóm dịch: <span className="text-text-main ml-1">{novel.translationGroup}</span></span>
                   <button 
                     onClick={() => alert(`Đã theo dõi nhóm ${novel.translationGroup}!`)}
-                    className="text-[10px] font-black text-primary uppercase tracking-widest text-left hover:underline"
+                    className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-widest text-left hover:underline"
                   >
                     + Theo dõi nhóm
                   </button>
@@ -193,16 +193,16 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
               </div>
               <button 
                 onClick={() => setShowDonateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-pink-500/10 text-pink-500 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-pink-500 hover:text-white transition-all transform hover:scale-105"
+                className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-pink-500/10 text-pink-500 rounded-full font-black text-[9px] md:text-[10px] uppercase tracking-widest hover:bg-pink-500 hover:text-white transition-all transform hover:scale-105"
               >
-                <Heart className="size-4" />
-                Đại Gia Tặng Quà
+                <Heart className="size-3 md:size-4" />
+                Nạp Vàng Cứu Trợ
               </button>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-3 md:gap-6">
               <button 
                 onClick={() => allChapters[0] && onChapterSelect(allChapters[0])}
-                className="flex items-center justify-center h-16 px-12 bg-primary text-white rounded-full font-black text-sm tracking-widest uppercase hover:opacity-90 transition-all shadow-2xl shadow-primary/30 transform hover:-translate-y-1"
+                className="flex items-center justify-center h-12 px-6 md:h-16 md:px-12 bg-primary text-white rounded-full font-black text-xs md:text-sm tracking-widest uppercase hover:opacity-90 transition-all shadow-2xl shadow-primary/30 transform hover:-translate-y-1 w-full sm:w-auto"
               >
                 Bắt đầu đọc
               </button>
@@ -224,39 +224,17 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
                     handleFirestoreError(error, OperationType.WRITE, path);
                   }
                 }}
-                className="flex items-center justify-center h-16 px-12 bg-surface border-2 border-accent/10 text-text-main rounded-full font-black text-sm tracking-widest uppercase hover:border-primary/40 transition-all gap-3 shadow-xl"
+                className="flex items-center justify-center h-12 px-6 md:h-16 md:px-12 bg-surface border-2 border-accent/10 text-text-main rounded-full font-black text-xs md:text-sm tracking-widest uppercase hover:border-primary/40 transition-all gap-2 md:gap-3 shadow-xl flex-1 sm:flex-none"
               >
-                <BookmarkPlus className="size-6" />
-                Thêm vào tủ sách
-              </button>
-              <button 
-                onClick={async () => {
-                  if (!user) {
-                    onLogin();
-                    return;
-                  }
-                  const path = `users/${user.uid}/bookshelf/${novel.id}`;
-                  try {
-                    await setDoc(doc(db, path), {
-                      novelId: novel.id,
-                      isReadLater: true,
-                      updatedAt: serverTimestamp()
-                    }, { merge: true });
-                    alert('Đã thêm vào danh sách đọc sau!');
-                  } catch (error) {
-                    handleFirestoreError(error, OperationType.WRITE, path);
-                  }
-                }}
-                className="flex items-center justify-center h-16 px-12 bg-surface border-2 border-accent/10 text-text-main rounded-full font-black text-sm tracking-widest uppercase hover:border-primary/40 transition-all gap-3 shadow-xl"
-              >
-                <Clock className="size-6" />
-                Đọc sau
+                <BookmarkPlus className="size-4 md:size-6" />
+                <span className="hidden sm:inline">Thêm vào tủ sách</span>
+                <span className="sm:hidden">Lưu</span>
               </button>
               <button 
                 onClick={handleShare}
-                className={`p-5 bg-surface rounded-full border-2 transition-all shadow-xl ${isShared ? 'border-green-500 text-green-500' : 'border-accent/10 text-muted hover:text-primary hover:border-primary/40'}`}
+                className={`flex-1 sm:flex-none h-12 md:h-[64px] w-auto sm:w-[64px] flex items-center justify-center bg-surface rounded-full border-2 transition-all shadow-xl ${isShared ? 'border-green-500 text-green-500' : 'border-accent/10 text-muted hover:text-primary hover:border-primary/40'}`}
               >
-                {isShared ? <Check className="size-6" /> : <Share2 className="size-6" />}
+                {isShared ? <Check className="size-4 md:size-6" /> : <Share2 className="size-4 md:size-6" />}
               </button>
             </div>
           </div>

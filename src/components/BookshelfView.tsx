@@ -176,7 +176,7 @@ export default function BookshelfView({ onNovelSelect, user, onLogin }: Bookshel
 
   if (!user) {
     return (
-      <main className="w-full max-w-[1200px] px-8 pb-32 mx-auto pt-12">
+      <main className="w-full max-w-[1200px] px-4 md:px-8 pb-32 mx-auto pt-6 md:pt-12">
         <div className="flex flex-col items-center justify-center py-32 bg-surface rounded-[40px] border border-dashed border-accent/20">
           <div className="p-6 bg-background-light rounded-full text-muted mb-6">
             <LogIn className="size-12" />
@@ -203,7 +203,7 @@ export default function BookshelfView({ onNovelSelect, user, onLogin }: Bookshel
   }
 
   return (
-    <main className="w-full max-w-[1200px] px-8 pb-32 mx-auto pt-12">
+    <main className="w-full max-w-[1200px] px-4 md:px-8 pb-32 mx-auto pt-6 md:pt-12">
       {greeting && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2 p-8 bg-gradient-to-r from-primary/10 via-surface to-surface rounded-[32px] border border-primary/10 relative overflow-hidden group">

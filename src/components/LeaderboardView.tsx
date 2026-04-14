@@ -40,7 +40,7 @@ export default function LeaderboardView() {
   };
 
   return (
-    <main className="w-full max-w-[1000px] px-8 pb-32 mx-auto pt-12">
+    <main className="w-full max-w-[1000px] px-4 md:px-8 pb-32 mx-auto pt-6 md:pt-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
         <div>
           <div className="flex items-center gap-3 mb-4">
