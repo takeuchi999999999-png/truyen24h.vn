@@ -49,12 +49,12 @@ export default function Footer() {
             <h3 className="text-sm font-black uppercase tracking-widest text-text-main mb-6">Chính Sách & Quy Định</h3>
             <ul className="space-y-4">
               <li>
-                <Link href="#" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2">
+                <Link href="/dieu-khoan-su-dung" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2">
                   <FileText className="size-4" /> Điều khoản Sử dụng
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2">
+                <Link href="/chinh-sach-bao-mat" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2">
                   <Shield className="size-4" /> Chính sách Bảo mật
                 </Link>
               </li>

@@ -568,7 +568,11 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
       )}
 
       {/* Content Area */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-8 pt-24 md:pt-32 pb-48">
+      <main 
+         className="max-w-3xl mx-auto px-4 sm:px-8 pt-24 md:pt-32 pb-48"
+         onCopy={(e) => { e.preventDefault(); alert('Cảnh báo: Nội dung này đã được đăng ký bảo hộ bản quyền số DMCA. Nghiêm cấm sao chép dưới mọi hình thức!'); }}
+         onContextMenu={(e) => e.preventDefault()}
+      >
         <div className="mb-24 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6">
             <span>Chương {chapter.chapterNumber}</span>

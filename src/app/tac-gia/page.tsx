@@ -166,8 +166,6 @@ export default function AuthorLandingPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }
