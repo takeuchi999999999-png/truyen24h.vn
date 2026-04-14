@@ -6,7 +6,7 @@ import AdminDashboard from './AdminDashboard';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-const ADMIN_EMAIL = 'phamanhtung.jp@gmail.com';
+const ADMIN_EMAILS = ['phamanhtung.jp@gmail.com', 'truyen24hvnn@gmail.com'];
 
 export default function AdminClientWrapper() {
   const [user, setUser] = useState<User | null>(null);
@@ -47,7 +47,7 @@ export default function AdminClientWrapper() {
     );
   }
 
-  if (user.email !== ADMIN_EMAIL) {
+  if (!ADMIN_EMAILS.includes(user.email || '')) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center text-center p-8">
         <div className="size-24 rounded-full bg-red-500/10 flex items-center justify-center mb-6">

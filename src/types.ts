@@ -6,6 +6,7 @@ export interface Chapter {
   chapterNumber: number;
   isVip?: boolean;
   price?: number;
+  ttsAudioUrl?: string;
 }
 
 export interface Novel {

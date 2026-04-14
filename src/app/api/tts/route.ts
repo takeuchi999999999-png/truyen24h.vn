@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
+import { EdgeTTS } from 'node-edge-tts';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,34 +11,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 });
     }
 
-    // Prepare child process for Edge TTS
-    // Python's edge-tts pipe stdout
+    // Prepare temp file for edge-tts
+    const tempFilePath = path.join(os.tmpdir(), `tts-${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`);
     
-    const stream = new ReadableStream({
-      start(controller) {
-        const p = spawn('python', ['-m', 'edge_tts', '--text', text, '--voice', 'vi-VN-HoaiMyNeural', '--write-media', '-']);
-        
-        p.stdout.on('data', (chunk) => {
-          controller.enqueue(chunk);
-        });
-        
-        p.stderr.on('data', (err) => {
-          console.error('Edge-TTS Error:', err.toString());
-        });
-        
-        p.on('close', (code) => {
-          if (code !== 0) {
-             console.error(`child process exited with code ${code}`);
-          }
-          controller.close();
-        });
-      }
+    // Configure Node-Edge-TTS
+    const tts = new EdgeTTS({
+      voice: 'vi-VN-HoaiMyNeural',
+      pitch: '+0Hz',
+      rate: '+0%',
+      volume: '+0%'
     });
 
-    return new NextResponse(stream, {
+    await tts.ttsPromise(text, tempFilePath);
+
+    // Read the created file
+    const audioBuffer = fs.readFileSync(tempFilePath);
+    
+    // Clean up
+    fs.unlinkSync(tempFilePath);
+
+    return new NextResponse(audioBuffer, {
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
   } catch (error) {

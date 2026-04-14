@@ -54,7 +54,7 @@ export default function CommunityWidget() {
 
     // Use current admin profile if it is the admin testing email.
     // In production we would fetch the user's role from their firestore doc.
-    const isVIP = user.email === 'phamanhtung.jp@gmail.com';
+    const isVIP = user.email === 'phamanhtung.jp@gmail.com' || user.email === 'truyen24hvnn@gmail.com';
 
     await addDoc(collection(db, `channels/${activeChannel}/messages`), {
       text: message.trim(),

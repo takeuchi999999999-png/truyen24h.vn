@@ -2,7 +2,8 @@ import { ArrowLeft, ArrowRight, Settings, Menu, X, ChevronLeft, ChevronRight, Li
 import { useRef } from 'react';
 import { Novel, Chapter, UserProfile, InlineComment } from '../types';
 import { useState, useEffect } from 'react';
-import { db, handleFirestoreError, OperationType, auth } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, handleFirestoreError, OperationType, auth, storage } from '../firebase';
 import { doc, setDoc, serverTimestamp, onSnapshot, getDoc, collection, query, orderBy, addDoc } from 'firebase/firestore';
 
 interface ReaderViewProps {
@@ -204,17 +205,36 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
       return;
     }
 
+    if (chapter.ttsAudioUrl) {
+      setAudioSrc(chapter.ttsAudioUrl);
+      setIsPlaying(true);
+      setTimeout(() => {
+        if (audioRef.current) audioRef.current.play();
+      }, 100);
+      return;
+    }
+
     setIsAudioLoading(true);
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: chapter.title + " . " + chapter.content })
+        body: JSON.stringify({ text: chapter.title + ". " + chapter.content })
       });
       if (res.ok) {
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        setAudioSrc(url);
+        
+        // Upload to Firebase Storage
+        const audioRefStorage = ref(storage, `audio/novels/${novel.id}/chapters/${chapter.id}.mp3`);
+        await uploadBytes(audioRefStorage, blob);
+        const downloadUrl = await getDownloadURL(audioRefStorage);
+        
+        // Save URL to Firestore chapter
+        await setDoc(doc(db, `novels/${novel.id}/chapters/${chapter.id}`), {
+          ttsAudioUrl: downloadUrl
+        }, { merge: true });
+
+        setAudioSrc(downloadUrl);
         setIsPlaying(true);
         setTimeout(() => {
           if (audioRef.current) audioRef.current.play();
@@ -224,6 +244,7 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
       }
     } catch (e) {
       console.error(e);
+      alert("Hệ thống TTS hiện không phản hồi. Vui lòng thử lại sau.");
     }
     setIsAudioLoading(false);
   };

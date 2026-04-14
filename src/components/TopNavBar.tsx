@@ -50,7 +50,7 @@ export default function TopNavBar({
     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
       if (doc.exists()) {
         let profile = doc.data() as UserProfile;
-        if (user.email === 'phamanhtung.jp@gmail.com') {
+        if (user.email === 'phamanhtung.jp@gmail.com' || user.email === 'truyen24hvnn@gmail.com') {
           profile = {
             ...profile,
             coins: 99999999, // Setup Admin Testing Coins
@@ -238,7 +238,7 @@ export default function TopNavBar({
                       <BookPlus className="size-4" />
                       Creator Studio
                     </button>
-                    {user.email === 'phamanhtung.jp@gmail.com' && (
+                    {(user.email === 'phamanhtung.jp@gmail.com' || user.email === 'truyen24hvnn@gmail.com') && (
                       <button 
                         onClick={() => {
                           window.location.href = '/admin';

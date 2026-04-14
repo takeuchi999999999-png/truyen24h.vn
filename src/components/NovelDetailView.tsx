@@ -76,7 +76,7 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
     const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
       if (doc.exists()) {
         const data = doc.data();
-        if (data.email === 'phamanhtung.jp@gmail.com') {
+        if (data.email === 'phamanhtung.jp@gmail.com' || data.email === 'truyen24hvnn@gmail.com') {
            data.coins = 99999999;
         }
         setUserProfile(data);
