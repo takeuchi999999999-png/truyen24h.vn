@@ -53,8 +53,8 @@ export default function BannerSlider({ novels }: BannerSliderProps) {
                  alt={novel.title}
                  className="w-full h-full object-cover"
                />
-               {novel.isVip && (
-                  <div className="absolute top-2 left-2 bg-yellow-500 text-black text-[10px] font-black uppercase px-2 py-1 rounded">VIP</div>
+               {novel.isHot && (
+                  <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-black uppercase px-2 py-1 rounded shadow-md">HOT</div>
                )}
             </div>
 
