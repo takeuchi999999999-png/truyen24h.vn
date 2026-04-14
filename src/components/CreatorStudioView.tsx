@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, BookPlus, FileText, Settings, Plus, ChevronRight, Edit3, Trash2, Eye, MessageSquare, Save, X, Image as ImageIcon, Loader2, Wallet, ArrowRightLeft, Zap } from 'lucide-react';
+import { LayoutDashboard, BookPlus, FileText, Settings, Plus, ChevronRight, Edit3, Trash2, Eye, MessageSquare, Save, X, Image as ImageIcon, Loader2, Wallet, ArrowRightLeft, Zap, Bot } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { Novel, Chapter, UserProfile } from '../types';
 import WithdrawModal from './WithdrawModal';
+import AutoBotImport from './AutoBotImport';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch, increment } from 'firebase/firestore';
 import { GENRES } from '../constants';
@@ -17,6 +18,7 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [showAutoBot, setShowAutoBot] = useState(false);
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
   const [selectedNovelForChapters, setSelectedNovelForChapters] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -303,13 +305,24 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
           <p className="text-muted font-medium">Nơi chắp cánh cho những ý tưởng của bạn</p>
         </div>
 
-        <button 
-          onClick={() => setIsCreating(true)}
-          className="flex items-center gap-3 px-8 py-4 bg-primary text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 transition-all"
-        >
-          <Plus className="size-5" />
-          <span>Đăng truyện mới</span>
-        </button>
+        <div className="flex gap-3">
+          {user?.email && ['phamanhtung.jp@gmail.com', 'truyen24hvnn@gmail.com'].includes(user.email) && (
+            <button 
+              onClick={() => setShowAutoBot(true)}
+              className="flex items-center gap-2 px-6 py-4 bg-orange-500 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-orange-500/20 hover:opacity-90 transition-all"
+            >
+              <Bot className="size-5" />
+              <span className="hidden sm:inline">Bot Tải Đăng (TXT)</span>
+            </button>
+          )}
+          <button 
+            onClick={() => setIsCreating(true)}
+            className="flex items-center gap-3 px-6 py-4 bg-primary text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 transition-all"
+          >
+            <Plus className="size-5" />
+            <span>Đăng truyện mới</span>
+          </button>
+        </div>
       </div>
 
       {userProfile && (
@@ -353,6 +366,14 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
           userProfile={userProfile} 
           onClose={() => setShowWithdrawModal(false)}
           onConfirm={handleConfirmWithdraw}
+        />
+      )}
+
+      {showAutoBot && (
+        <AutoBotImport 
+          user={user} 
+          novels={novels} 
+          onClose={() => setShowAutoBot(false)} 
         />
       )}
 
