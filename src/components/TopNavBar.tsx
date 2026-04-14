@@ -330,14 +330,34 @@ export default function TopNavBar({
              </button>
              
              {showGenres && (
-                <div className="absolute top-full right-0 mt-2 w-64 bg-surface rounded-2xl shadow-2xl border border-accent/10 p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                   <div className="flex flex-col gap-1 pb-2 border-b border-accent/5 mb-2">
-                     <button onClick={() => {onTabChange('discover'); setShowGenres(false)}} className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'discover' ? 'bg-primary/10 text-primary' : 'text-text-main'}`}>Khám phá</button>
+                <div className="absolute top-full right-0 mt-2 w-72 bg-surface rounded-2xl shadow-2xl border border-accent/10 p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                   
+                   {/* Khối Nút Tính Năng Quan Trọng (Mobile Only) */}
+                   <div className="flex flex-col gap-2 mb-4 pb-4 border-b border-accent/5">
+                      <Link href="/vip" onClick={() => setShowGenres(false)} className="w-full h-12 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl shadow-md font-black uppercase tracking-widest text-sm hover:scale-[1.02] transition-transform">
+                         <Coins className="size-5" /> Nạp Xu
+                      </Link>
+                      <div className="flex gap-2">
+                         <button onClick={() => { onTabChange('creator-studio'); setShowGenres(false); }} className="flex-1 h-12 flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#ff4b4b] text-white rounded-xl shadow-md font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-transform">
+                            <BookPlus className="size-4" /> Viết Truyện
+                         </button>
+                         {(user && userProfile) && (
+                            <button onClick={() => { setShowCheckInModal(true); setShowGenres(false); }} className="flex-1 h-12 flex items-center justify-center gap-2 border-2 border-primary/20 text-primary bg-surface rounded-xl font-black uppercase tracking-widest text-xs hover:bg-primary/10 transition-colors">
+                               <Sparkles className="size-4" /> Điểm Danh
+                            </button>
+                         )}
+                      </div>
+                   </div>
+
+                   {/* Các Tabs Cơ Bản */}
+                   <div className="flex flex-col gap-1 pb-4 border-b border-accent/5 mb-4">
                      <button onClick={() => {onTabChange('bookshelf'); setShowGenres(false)}} className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'bookshelf' ? 'bg-primary/10 text-primary' : 'text-text-main'}`}>Tủ sách</button>
                      <button onClick={() => {onTabChange('leaderboard'); setShowGenres(false)}} className={`text-left px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'leaderboard' ? 'bg-primary/10 text-primary' : 'text-text-main'}`}>Bảng xếp hạng</button>
                    </div>
-                   <div className="px-4 py-2 text-xs font-black text-muted uppercase tracking-widest">Thể loại</div>
-                   <div className="grid grid-cols-2 gap-1 overflow-y-auto max-h-64 no-scrollbar">
+
+                   {/* Phân loại truyện */}
+                   <div className="px-4 py-2 text-[10px] font-black text-muted uppercase tracking-widest mb-2">Thể loại</div>
+                   <div className="grid grid-cols-2 gap-1 overflow-y-auto max-h-48 no-scrollbar pr-2">
                      {GENRES.map(genre => (
                        <button 
                          key={genre} 

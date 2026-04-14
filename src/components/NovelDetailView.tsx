@@ -182,7 +182,7 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
                 <span key={genre} className="px-4 py-1.5 md:px-5 md:py-2 bg-surface/90 backdrop-blur-md border border-black/5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-main/70 shadow-sm">{genre}</span>
               ))}
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-black leading-tight md:leading-none mb-6 md:mb-8 text-text-main tracking-tighter drop-shadow-2xl">{novel.title}</h1>
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-black leading-tight md:leading-none mb-6 md:mb-8 text-text-main tracking-tighter drop-shadow-2xl break-words whitespace-normal">{novel.title}</h1>
             <div className="flex flex-wrap items-center gap-4 md:gap-10 text-text-main/60 mb-8 md:mb-12">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-xl hidden sm:block">
@@ -212,50 +212,52 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
                 Nạp Vàng Cứu Trợ
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-3 md:gap-6">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 md:gap-6">
               <button 
                 onClick={() => allChapters[0] && onChapterSelect(allChapters[0])}
                 className="flex items-center justify-center h-12 px-6 md:h-16 md:px-12 bg-primary text-white rounded-full font-black text-xs md:text-sm tracking-widest uppercase hover:opacity-90 transition-all shadow-2xl shadow-primary/30 transform hover:-translate-y-1 w-full sm:w-auto"
               >
                 Bắt đầu đọc
               </button>
-              <button 
-                onClick={async () => {
-                  if (!user) {
-                    onLogin();
-                    return;
-                  }
-                  const path = `users/${user.uid}/bookshelf/${novel.id}`;
-                  try {
-                    await setDoc(doc(db, path), {
-                      novelId: novel.id,
-                      isFollowing: true,
-                      updatedAt: serverTimestamp()
-                    }, { merge: true });
-                    alert('Đã thêm vào tủ sách!');
-                  } catch (error) {
-                    handleFirestoreError(error, OperationType.WRITE, path);
-                  }
-                }}
-                className="flex items-center justify-center h-12 px-6 md:h-16 md:px-12 bg-surface border-2 border-accent/10 text-text-main rounded-full font-black text-xs md:text-sm tracking-widest uppercase hover:border-primary/40 transition-all gap-2 md:gap-3 shadow-xl flex-1 sm:flex-none"
-              >
-                <BookmarkPlus className="size-4 md:size-6" />
-                <span className="hidden sm:inline">Thêm vào tủ sách</span>
-                <span className="sm:hidden">Lưu</span>
-              </button>
-              <button 
-                onClick={handleShare}
-                className={`flex-1 sm:flex-none h-12 md:h-[64px] w-auto sm:w-[64px] flex items-center justify-center bg-surface rounded-full border-2 transition-all shadow-xl ${isShared ? 'border-green-500 text-green-500' : 'border-accent/10 text-muted hover:text-primary hover:border-primary/40'}`}
-              >
-                {isShared ? <Check className="size-4 md:size-6" /> : <Share2 className="size-4 md:size-6" />}
-              </button>
+              <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
+                <button 
+                  onClick={async () => {
+                    if (!user) {
+                      onLogin();
+                      return;
+                    }
+                    const path = `users/${user.uid}/bookshelf/${novel.id}`;
+                    try {
+                      await setDoc(doc(db, path), {
+                        novelId: novel.id,
+                        isFollowing: true,
+                        updatedAt: serverTimestamp()
+                      }, { merge: true });
+                      alert('Đã thêm vào tủ sách!');
+                    } catch (error) {
+                      handleFirestoreError(error, OperationType.WRITE, path);
+                    }
+                  }}
+                  className="flex items-center justify-center h-12 px-6 md:h-16 md:px-12 bg-surface border-2 border-accent/10 text-text-main rounded-full font-black text-xs md:text-sm tracking-widest uppercase hover:border-primary/40 transition-all gap-2 md:gap-3 shadow-xl flex-1"
+                >
+                  <BookmarkPlus className="size-4 md:size-6" />
+                  <span className="hidden sm:inline">Thêm vào tủ sách</span>
+                  <span className="sm:hidden">Lưu</span>
+                </button>
+                <button 
+                  onClick={handleShare}
+                  className={`flex-none h-12 w-12 md:h-[64px] md:w-[64px] flex items-center justify-center bg-surface rounded-full border-2 transition-all shadow-xl ${isShared ? 'border-green-500 text-green-500' : 'border-accent/10 text-muted hover:text-primary hover:border-primary/40'}`}
+                >
+                  {isShared ? <Check className="size-4 md:size-6" /> : <Share2 className="size-4 md:size-6" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-8 relative pb-32">
-        <div className="flex flex-col lg:flex-row gap-20">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-8 relative pb-32">
+        <div className="flex flex-col lg:flex-row gap-10 lg:gap-20">
           <div className="w-full lg:w-[320px] shrink-0 relative -mt-32 lg:-mt-[320px] z-20 hidden lg:block">
             <div className="relative group">
               <img 
@@ -295,23 +297,23 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
             </div>
           </div>
 
-          <div className="flex-1 pt-16">
-            <div className="flex gap-16 border-b border-accent/10 mb-16">
+          <div className="flex-1 pt-6 lg:pt-16">
+            <div className="flex gap-5 md:gap-16 border-b border-accent/10 mb-10 md:mb-16 overflow-x-auto no-scrollbar">
               <button 
                 onClick={() => setActiveTab('info')}
-                className={`pb-8 font-display font-black text-3xl transition-all relative -mb-[4px] uppercase tracking-tighter ${activeTab === 'info' ? 'text-text-main border-b-4 border-primary' : 'text-muted hover:text-text-main'}`}
+                className={`pb-4 md:pb-8 font-display font-black text-lg md:text-3xl transition-all relative shrink-0 -mb-[4px] uppercase tracking-tighter ${activeTab === 'info' ? 'text-text-main border-b-4 border-primary' : 'text-muted hover:text-text-main'}`}
               >
                 Giới thiệu
               </button>
               <button 
                 onClick={() => setActiveTab('chapters')}
-                className={`pb-8 font-display font-black text-3xl transition-all relative -mb-[4px] uppercase tracking-tighter ${activeTab === 'chapters' ? 'text-text-main border-b-4 border-primary' : 'text-muted hover:text-text-main'}`}
+                className={`pb-4 md:pb-8 font-display font-black text-lg md:text-3xl transition-all relative shrink-0 -mb-[4px] uppercase tracking-tighter ${activeTab === 'chapters' ? 'text-text-main border-b-4 border-primary' : 'text-muted hover:text-text-main'}`}
               >
                 Danh sách chương
               </button>
               <button 
                 onClick={() => setActiveTab('comments')}
-                className={`pb-8 font-display font-black text-3xl transition-all relative -mb-[4px] uppercase tracking-tighter flex items-center gap-3 ${activeTab === 'comments' ? 'text-text-main border-b-4 border-primary' : 'text-muted hover:text-text-main'}`}
+                className={`pb-4 md:pb-8 font-display font-black text-lg md:text-3xl transition-all relative shrink-0 -mb-[4px] uppercase tracking-tighter flex items-center gap-3 ${activeTab === 'comments' ? 'text-text-main border-b-4 border-primary' : 'text-muted hover:text-text-main'}`}
               >
                 Bình luận
               </button>
