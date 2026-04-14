@@ -70,12 +70,11 @@ export default function CommunityWidget() {
 
   return (
     <>
-      {/* Floating Button */}
       <button 
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-8 right-8 size-16 bg-primary rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 transition-all z-50 ${isOpen ? 'opacity-0 pointer-events-none scale-50' : 'opacity-100 scale-100'}`}
+        className={`fixed bottom-8 right-8 size-16 sm:size-14 bg-background-light p-1 rounded-full shadow-2xl shadow-primary/30 flex items-center justify-center border-2 border-primary/50 hover:border-primary hover:scale-110 transition-all z-50 ${isOpen ? 'opacity-0 pointer-events-none scale-50' : 'opacity-100 scale-100'}`}
       >
-        <MessageCircle className="size-8" />
+        <img src="/logo.jpg" alt="Cộng Đồng" className="w-full h-full object-cover rounded-full" />
         <div className="absolute top-0 right-0 size-4 bg-red-500 rounded-full border-2 border-background animate-pulse"></div>
       </button>
 
