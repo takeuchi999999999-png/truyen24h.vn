@@ -14,6 +14,8 @@ export default function AutoBotImport({ user, novels, onClose }: AutoBotImportPr
   const [selectedNovelId, setSelectedNovelId] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [needTranslation, setNeedTranslation] = useState(false);
+  const [vipThreshold, setVipThreshold] = useState<number>(0);
+  const [vipPrice, setVipPrice] = useState<number>(50);
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [totalChapters, setTotalChapters] = useState(0);
@@ -105,13 +107,16 @@ export default function AutoBotImport({ user, novels, onClose }: AutoBotImportPr
         const novelRef = doc(db, 'novels', selectedNovelId);
         const chapterRef = doc(collection(novelRef, 'chapters'));
         
+        const isChapterVip = vipThreshold > 0 && (i + 1) >= vipThreshold;
+
         await setDoc(chapterRef, {
           id: chapterRef.id,
           title: finalTitle,
           content: finalContent,
           chapterNumber: i + 1,
           publishDate: new Date().toISOString(),
-          isVip: false, // Mặc định mở
+          isVip: isChapterVip,
+          price: isChapterVip ? vipPrice : 0,
         });
         
         setProgress(i + 1);
@@ -203,8 +208,32 @@ export default function AutoBotImport({ user, novels, onClose }: AutoBotImportPr
             />
             <label htmlFor="ai-mode" className="flex-1 cursor-pointer">
               <span className="block font-black text-sm text-text-main mb-1">Đây là Raw Tiếng Trung (Cần Dịch)</span>
-              <span className="block text-xs text-muted font-medium">Bot sẽ tự động gọi AI Gemini siêu cấp để dịch cho từng chương mượt như con người. Thời gian sẽ lâu hơn bình thường! Nếu đã có Tiếng Việt, bỏ tích mục này.</span>
+              <span className="block text-xs text-muted font-medium">Bot sẽ tự động gọi AI Gemini siêu cấp để dịch mượt như con người. Thời gian lâu hơn bình thường! Nếu file chữ Tiếng Việt, hãy BỎ TÍCH.</span>
             </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 border border-accent/10 rounded-2xl">
+              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted block mb-2">Tự động Khóa VIP từ chương</label>
+              <input 
+                type="number" 
+                value={vipThreshold === 0 ? '' : vipThreshold}
+                onChange={(e) => setVipThreshold(Number(e.target.value) || 0)}
+                placeholder="VD: 50 (để trống: Không khóa)"
+                disabled={isRunning}
+                className="w-full bg-transparent text-text-main border-none outline-none font-bold text-sm"
+              />
+            </div>
+            <div className="p-4 border border-accent/10 rounded-2xl">
+              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted block mb-2">Giá mở khóa (Xu/Chương)</label>
+              <input 
+                type="number" 
+                value={vipPrice}
+                onChange={(e) => setVipPrice(Number(e.target.value) || 0)}
+                disabled={isRunning}
+                className="w-full bg-transparent text-text-main border-none outline-none font-bold text-sm"
+              />
+            </div>
           </div>
 
           {totalChapters > 0 && (
