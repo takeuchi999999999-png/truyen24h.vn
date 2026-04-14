@@ -1,6 +1,5 @@
 import { BookMarked, History, Trash2, BookOpen, LogIn, Clock, Sparkles, AlertCircle, X, Gift, CalendarCheck, Trophy, Flame } from 'lucide-react';
 import { Novel, UserProfile } from '../types';
-import { NOVELS } from '../constants';
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -24,6 +23,7 @@ interface BookshelfItem {
 export default function BookshelfView({ onNovelSelect, user, onLogin }: BookshelfViewProps) {
   const [activeTab, setActiveTab] = useState<'following' | 'history' | 'readLater'>('following');
   const [items, setItems] = useState<BookshelfItem[]>([]);
+  const [novelsMap, setNovelsMap] = useState<Record<string, Novel>>({});
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState('');
   const [novelToDelete, setNovelToDelete] = useState<string | null>(null);
@@ -102,6 +102,28 @@ export default function BookshelfView({ onNovelSelect, user, onLogin }: Bookshel
     return () => unsubscribe();
   }, [user]);
 
+  useEffect(() => {
+    const missingIds = items.map(i => i.novelId).filter(id => !novelsMap[id]);
+    if (missingIds.length === 0) return;
+    
+    const fetchNovels = async () => {
+      const newMap = { ...novelsMap };
+      await Promise.all(missingIds.map(async (id) => {
+        try {
+          const docSnap = await getDoc(doc(db, 'novels', id));
+          if (docSnap.exists()) {
+            newMap[id] = { id: docSnap.id, ...docSnap.data() } as Novel;
+          }
+        } catch (e) {
+          console.error("Failed to fetch novel", id, e);
+        }
+      }));
+      setNovelsMap(newMap);
+    };
+    
+    fetchNovels();
+  }, [items, novelsMap]);
+
   const handleDelete = (e: React.MouseEvent, novelId: string) => {
     e.stopPropagation();
     setNovelToDelete(novelId);
@@ -131,7 +153,7 @@ export default function BookshelfView({ onNovelSelect, user, onLogin }: Bookshel
   const renderNovelGrid = () => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
       {filteredItems.map((item) => {
-        const novel = NOVELS.find(n => n.id === item.novelId);
+        const novel = novelsMap[item.novelId];
         if (!novel) return null;
 
         return (

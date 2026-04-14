@@ -5,7 +5,6 @@ import CommentSection from './CommentSection';
 import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp, getDoc, updateDoc, increment } from 'firebase/firestore';
-import { NOVELS } from '../constants';
 import { getAIRecommendations, getNovelSummary } from '../services/geminiService';
 
 interface NovelDetailViewProps {
@@ -28,6 +27,16 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
   const [donateAmount, setDonateAmount] = useState<number>(100);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
+  const [allNovelsData, setAllNovelsData] = useState<Novel[]>([]);
+
+  useEffect(() => {
+    const qNovels = query(collection(db, 'novels'));
+    const unsubscribe = onSnapshot(qNovels, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel));
+      setAllNovelsData(fetched);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const path = `novels/${novel.id}/chapters`;
@@ -52,14 +61,15 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
   }, [novel.chapters, dynamicChapters]);
 
   useEffect(() => {
+    if (allNovelsData.length === 0) return;
     const fetchAI = async () => {
       setLoadingAI(true);
-      const recs = await getAIRecommendations(novel);
+      const recs = await getAIRecommendations(novel, allNovelsData);
       setAiRecommendations(recs);
       setLoadingAI(false);
     };
     fetchAI();
-  }, [novel]);
+  }, [novel, allNovelsData]);
 
   useEffect(() => {
     if (!user) return;
@@ -129,14 +139,17 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
     }
   };
 
+
+
   const similarNovels = useMemo(() => {
-    return NOVELS.filter(n => 
+    return allNovelsData.filter(n => 
       n.id !== novel.id && (
         n.author === novel.author || 
-        n.genres.some(g => novel.genres.includes(g))
+        (n.genres && n.genres.some(g => novel.genres.includes(g)))
       )
     ).slice(0, 5);
-  }, [novel]);
+  }, [allNovelsData, novel]);
+
   const getCoverUrl = (url: string | undefined, id: string) => {
     return url || `https://picsum.photos/seed/novel-${id}/400/600`;
   };

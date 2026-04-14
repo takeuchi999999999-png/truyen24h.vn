@@ -1,8 +1,10 @@
-import { Filter, ChevronDown, BookOpen, Star, Eye } from 'lucide-react';
+import { Filter, ChevronDown, BookOpen, Star, Eye, Loader2 } from 'lucide-react';
 import { Novel } from '../types';
-import { NOVELS, GENRES } from '../constants';
+import { GENRES } from '../constants';
 import { useState, useMemo, useEffect } from 'react';
 import Pagination from './Pagination';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 
 interface FilterViewProps {
   initialGenre?: string;
@@ -28,6 +30,22 @@ export default function FilterView({ initialGenre, initialSearch, onNovelSelect 
   const [sortBy, setSortBy] = useState<'Lượt xem' | 'Đánh giá' | 'Mới nhất'>('Mới nhất');
   const [searchTerm, setSearchTerm] = useState<string>(initialSearch || '');
   const [currentPage, setCurrentPage] = useState(1);
+  const [allNovels, setAllNovels] = useState<Novel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data
+  useEffect(() => {
+    const qNovels = query(collection(db, 'novels'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(qNovels, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Novel));
+      setAllNovels(fetched);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'novels');
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Update searchTerm when initialSearch changes
   useEffect(() => {
@@ -44,29 +62,29 @@ export default function FilterView({ initialGenre, initialSearch, onNovelSelect 
 
   const translationGroups = useMemo(() => {
     const groups = new Set<string>();
-    NOVELS.forEach(novel => {
+    allNovels.forEach(novel => {
       if (novel.translationGroup) {
         groups.add(novel.translationGroup);
       }
     });
     return Array.from(groups).sort();
-  }, []);
+  }, [allNovels]);
 
   const filteredNovels = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
     
-    return NOVELS.filter(novel => {
-      const genreMatch = selectedGenre === 'Tất cả' || novel.genres.includes(selectedGenre);
+    return allNovels.filter(novel => {
+      const genreMatch = selectedGenre === 'Tất cả' || (novel.genres && novel.genres.includes(selectedGenre));
       const statusMatch = selectedStatus === 'Tất cả' || novel.status === selectedStatus;
       const groupMatch = selectedGroup === 'Tất cả' || novel.translationGroup === selectedGroup;
       
       const searchMatch = !searchTerm || 
-        normalize(novel.title).includes(normalizedSearch) || 
-        normalize(novel.author).includes(normalizedSearch);
+        (novel.title && normalize(novel.title).includes(normalizedSearch)) || 
+        (novel.author && normalize(novel.author).includes(normalizedSearch));
         
       return genreMatch && statusMatch && groupMatch && searchMatch;
     });
-  }, [selectedGenre, selectedStatus, selectedGroup, searchTerm]);
+  }, [allNovels, selectedGenre, selectedStatus, selectedGroup, searchTerm]);
 
   const totalPages = Math.ceil(filteredNovels.length / ITEMS_PER_PAGE);
   const paginatedNovels = filteredNovels.slice(

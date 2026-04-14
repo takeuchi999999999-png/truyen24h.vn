@@ -3,7 +3,6 @@ import { db } from '@/firebase-backend';
 import NovelDetailClient from './NovelDetailClient';
 import TopNavBarClientWrapper from '@/components/TopNavBarClientWrapper';
 
-// SSR Fetching
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const novelRef = doc(db, 'novels', slug);
@@ -12,9 +11,33 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!novelSnap.exists()) return { title: 'Truyện không tồn tại' };
   
   const data = novelSnap.data();
+  const coverUrl = data.coverUrl || `https://picsum.photos/seed/novel-${slug}/400/600`;
+  
   return {
     title: `${data.title} - Đọc Truyện VIP`,
     description: data.description?.slice(0, 150) + '...',
+    openGraph: {
+      title: `${data.title} - Truyen24h`,
+      description: data.description?.slice(0, 150) + '...',
+      url: `https://truyen24h.com/truyen/${slug}`,
+      siteName: 'Truyen24h',
+      images: [
+        {
+          url: coverUrl,
+          width: 800,
+          height: 600,
+          alt: `Bìa truyện ${data.title}`,
+        },
+      ],
+      locale: 'vi_VN',
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: data.title,
+      description: data.description?.slice(0, 150) + '...',
+      images: [coverUrl],
+    },
   };
 }
 

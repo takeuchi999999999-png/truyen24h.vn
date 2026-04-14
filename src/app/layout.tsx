@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Truyen24h.vn - Thế Giới Truyện Đọc",
   description: "Bản quyền truyện online.",
+  icons: {
+    icon: '/logo.jpg',
+    apple: '/logo.jpg',
+  },
 };
 
 import CommunityWidget from "@/components/CommunityWidget";

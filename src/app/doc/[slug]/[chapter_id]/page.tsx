@@ -4,13 +4,45 @@ import ReaderClient from './ReaderClient';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string, chapter_id: string }> }) {
   const { slug, chapter_id } = await params;
+  const novelRef = doc(db, 'novels', slug);
+  const novelSnap = await getDoc(novelRef);
   const chapterRef = doc(db, `novels/${slug}/chapters`, chapter_id);
   const chapterSnap = await getDoc(chapterRef);
   
-  if (!chapterSnap.exists()) return { title: 'Đọc truyện' };
+  if (!chapterSnap.exists() || !novelSnap.exists()) return { title: 'Đọc truyện' };
   
+  const novelData = novelSnap.data();
+  const chapterData = chapterSnap.data();
+  const coverUrl = novelData.coverUrl || `https://picsum.photos/seed/novel-${slug}/400/600`;
+
+  const pageTitle = `Chương ${chapterData.chapterNumber}: ${chapterData.title} - ${novelData.title}`;
+  const pageDesc = `Đọc Chương ${chapterData.chapterNumber} của bộ truyện ${novelData.title} trên Truyen24h.`;
+
   return {
-    title: `Chương ${chapterSnap.data().chapterNumber}: ${chapterSnap.data().title} - Đọc Truyện VIP`,
+    title: pageTitle,
+    description: pageDesc,
+    openGraph: {
+      title: pageTitle,
+      description: pageDesc,
+      url: `https://truyen24h.com/doc/${slug}/${chapter_id}`,
+      siteName: 'Truyen24h',
+      images: [
+        {
+          url: coverUrl,
+          width: 800,
+          height: 600,
+          alt: `Bìa truyện ${novelData.title}`,
+        },
+      ],
+      locale: 'vi_VN',
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: pageTitle,
+      description: pageDesc,
+      images: [coverUrl],
+    },
   };
 }
 
