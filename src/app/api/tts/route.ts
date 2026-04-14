@@ -15,53 +15,19 @@ export async function POST(req: NextRequest) {
 
     // Configure Node-Edge-TTS
     const tts = new EdgeTTS({
-      voice: 'vi-VN-HoaiMyNeural',
+      voice: 'vi-VN-HoaiMyNeural', // Vietnamese Female Voice
       pitch: '+0Hz',
       rate: '+0%',
       volume: '+0%'
     });
 
-    // Chunk text by 600 characters max, respecting word boundaries
-    const chunks = [];
-    let currentChunk = '';
-    const words = text.split(' ');
+    const tempFilePath = path.join(os.tmpdir(), `tts-${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`);
     
-    for (const word of words) {
-        if ((currentChunk + ' ' + word).length > 600) {
-            chunks.push(currentChunk);
-            currentChunk = word;
-        } else {
-            currentChunk += (currentChunk ? ' ' : '') + word;
-        }
-    }
-    if (currentChunk) chunks.push(currentChunk);
+    await tts.ttsPromise(text, tempFilePath);
+    const audioBuffer = fs.readFileSync(tempFilePath);
+    fs.unlinkSync(tempFilePath);
 
-    const buffers = [];
-    
-    for (let i = 0; i < chunks.length; i++) {
-        const chunkText = chunks[i];
-        if (!chunkText.trim()) continue;
-        
-        const tempFilePath = path.join(os.tmpdir(), `tts-${Date.now()}-${i}-${Math.random().toString(36).substring(7)}.mp3`);
-        
-        try {
-            await tts.ttsPromise(chunkText, tempFilePath);
-            const audioBuffer = fs.readFileSync(tempFilePath);
-            buffers.push(audioBuffer);
-            fs.unlinkSync(tempFilePath);
-        } catch (err) {
-            console.error(`Error generating chunk ${i}:`, err);
-            // Optionally ignore one chunk failure and proceed
-        }
-    }
-
-    if (buffers.length === 0) {
-        throw new Error('Failed to generate any audio chunks');
-    }
-
-    const finalBuffer = Buffer.concat(buffers);
-
-    return new NextResponse(finalBuffer, {
+    return new NextResponse(audioBuffer, {
       headers: {
         'Content-Type': 'audio/mpeg',
         'Cache-Control': 'public, max-age=31536000, immutable',

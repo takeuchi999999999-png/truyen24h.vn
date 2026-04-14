@@ -193,62 +193,103 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
 
   const isChapterLocked = chapter.isVip && (!userProfile || !(userProfile.unlockedChapters || []).includes(chapter.id));
 
-  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const [audioQueue, setAudioQueue] = useState<string[]>([]);
 
   useEffect(() => {
-    // Cleanup speech when component unmounts or chapter changes
+    // Cleanup any native speech just in case
+    window.speechSynthesis.cancel();
     return () => {
-      window.speechSynthesis.cancel();
-      setSpeechUtterance(null);
       setIsPlaying(false);
+      setAudioQueue([]);
+      if (audioSrc) URL.revokeObjectURL(audioSrc);
     };
   }, [chapter.id]);
 
   const toggleAudio = async () => {
-    if (isPlaying) {
-      window.speechSynthesis.pause();
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
       setIsPlaying(false);
       return;
     }
 
-    if (window.speechSynthesis.paused && speechUtterance) {
-      window.speechSynthesis.resume();
+    if (audioRef.current && audioRef.current.paused && audioSrc) {
+      audioRef.current.play();
       setIsPlaying(true);
       return;
     }
 
-    // Khởi tạo giọng đọc Native của Trình Duyệt / Điện Thoại
-    window.speechSynthesis.cancel(); // Reset
-    const textToRead = chapter.title + ". " + chapter.content.replace(/\n/g, '. ');
+    // Lần đầu nhấn Play: Phá vỡ text thành từng đoạn ngắn (Split by sentences or punctuation)
+    setIsAudioLoading(true);
+    const fullText = chapter.title + ". " + chapter.content;
+    const sentences = fullText.match(/[^.!?\n]+[.!?\n]+/g) || [fullText];
     
-    // Tạo chuỗi đọc
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-    utterance.lang = 'vi-VN';
-    utterance.rate = 1.1; // Tốc độ tiêu chuẩn cho đọc truyện
-    utterance.pitch = 1.0;
+    // Ghép các câu quá ngắn lại với nhau để API tối ưu hơn (khoảng 300-400 ký tự mỗi chunk)
+    const chunks: string[] = [];
+    let currentChunk = '';
+    for (const s of sentences) {
+      if ((currentChunk + s).length > 300) {
+        if (currentChunk) chunks.push(currentChunk.trim());
+        currentChunk = s;
+      } else {
+        currentChunk += ' ' + s;
+      }
+    }
+    if (currentChunk.trim()) chunks.push(currentChunk.trim());
 
-    // Cố gắng tìm giọng nữ hoặc giọng tự nhiên nhất
-    const voices = window.speechSynthesis.getVoices();
-    const viVoices = voices.filter(v => v.lang.includes('vi'));
-    if (viVoices.length > 0) {
-      // Ưu tiên các giọng có chữ 'Premium' hoặc 'Google' hoặc 'Siri'
-      utterance.voice = viVoices.find(v => v.name.includes('Premium') || v.name.includes('Google') || v.name.includes('Siri')) || viVoices[0];
+    setAudioQueue(chunks);
+
+    // Chạy Chunk đầu tiên
+    await playNextChunk(chunks);
+  };
+
+  const playNextChunk = async (currentChunks: string[] = audioQueue) => {
+    if (currentChunks.length === 0) {
+      setIsPlaying(false);
+      setIsAudioLoading(false);
+      return;
     }
 
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setSpeechUtterance(null);
-    };
-    
-    utterance.onerror = (e) => {
-      console.error('Lỗi TTS:', e);
-      setIsPlaying(false);
-      setSpeechUtterance(null);
-    };
+    const chunkToPlay = currentChunks[0];
+    const remainingChunks = currentChunks.slice(1);
+    setAudioQueue(remainingChunks);
 
-    window.speechSynthesis.speak(utterance);
-    setSpeechUtterance(utterance);
-    setIsPlaying(true);
+    if (currentChunks === audioQueue) {
+       setIsAudioLoading(true); // Chỉ show loading ở đoạn đầu hoặc khi mạng lag gắt
+    }
+
+    try {
+      const res = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: chunkToPlay })
+      });
+      
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        
+        if (audioSrc) URL.revokeObjectURL(audioSrc); // Dọn RAM chunk cũ
+        setAudioSrc(url);
+        
+        setIsAudioLoading(false);
+        setIsPlaying(true);
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.play();
+            // Assign handler for end
+            audioRef.current.onended = () => {
+               playNextChunk(remainingChunks);
+            };
+          }
+        }, 50);
+      } else {
+        alert("Có lỗi kết nối máy chủ giọng đọc AI. Thử lại sau!");
+        setIsAudioLoading(false);
+      }
+    } catch (e) {
+      console.error(e);
+      setIsAudioLoading(false);
+    }
   };
 
   // Auto-hide controls on scroll
