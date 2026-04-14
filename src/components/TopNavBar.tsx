@@ -1,5 +1,5 @@
 "use client";
-import { Search, ChevronDown, Menu, BookMarked, LogIn, LogOut, Sun, Moon, User as UserIcon, Coins, Sparkles, Trophy, Zap, Crown, BookPlus } from 'lucide-react';
+import { Search, ChevronDown, Menu, BookMarked, LogIn, LogOut, Sun, Moon, User as UserIcon, Coins, Sparkles, Trophy, Zap, Crown, BookPlus, Bell } from 'lucide-react';
 import { GENRES } from '../constants';
 import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
@@ -165,9 +165,25 @@ export default function TopNavBar({
                 <button 
                   onClick={() => setShowCheckInModal(true)}
                   className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-black hover:bg-primary hover:text-white transition-all group"
+                  title="Điểm danh nhận quà"
                 >
                   <Sparkles className="size-4 group-hover:animate-spin" />
-                  <span>Điểm danh</span>
+                  <span className="hidden lg:inline">Điểm danh</span>
+                </button>
+
+                <button 
+                  onClick={() => onTabChange('creator-studio')}
+                  className="hidden md:flex items-center gap-2 px-6 py-2 bg-transparent text-primary border-2 border-primary rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-[0_0_15px_rgba(232,165,165,0.3)] hover:shadow-[0_0_25px_rgba(232,165,165,0.6)]"
+                >
+                  <BookPlus className="size-4" />
+                  <span>Viết Truyện</span>
+                </button>
+
+                <button 
+                  className="relative p-2 rounded-full bg-background-light text-text-main hover:bg-primary/10 hover:text-primary transition-all border border-accent/10"
+                >
+                  <Bell className="size-4 md:size-5" />
+                  <span className="absolute top-0 right-0 size-2.5 bg-red-500 rounded-full border-2 border-surface"></span>
                 </button>
 
                 <Link

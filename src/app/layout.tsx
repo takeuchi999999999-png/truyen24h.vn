@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 };
 
 import CommunityWidget from "@/components/CommunityWidget";
+import Footer from "@/components/Footer";
 
 export default function RootLayout({
   children,
@@ -36,6 +37,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col relative" suppressHydrationWarning>
         {children}
+        <Footer />
         <CommunityWidget />
       </body>
     </html>
