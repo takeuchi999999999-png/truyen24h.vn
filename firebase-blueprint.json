@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "User": {
+      "title": "Người dùng",
+      "description": "Thông tin hồ sơ người dùng",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID duy nhất của người dùng" },
+        "displayName": { "type": "string", "description": "Tên hiển thị" },
+        "email": { "type": "string", "format": "email", "description": "Địa chỉ email" },
+        "photoURL": { "type": "string", "format": "uri", "description": "Ảnh đại diện" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Ngày tạo tài khoản" },
+        "coins": { "type": "number", "description": "Số dư xu" },
+        "lastCheckIn": { "type": "string", "format": "date", "description": "Ngày điểm danh cuối cùng" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Comment": {
+      "title": "Bình luận",
+      "description": "Bình luận của độc giả về truyện",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "novelId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "content": { "type": "string", "description": "Nội dung bình luận" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["novelId", "userId", "content", "createdAt"]
+    },
+    "BookshelfItem": {
+      "title": "Tủ sách",
+      "description": "Truyện trong tủ sách của người dùng",
+      "type": "object",
+      "properties": {
+        "novelId": { "type": "string" },
+        "lastChapterId": { "type": "string" },
+        "lastChapterNumber": { "type": "number" },
+        "progress": { "type": "number", "description": "Phần trăm tiến độ" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "isFollowing": { "type": "boolean" },
+        "isReadLater": { "type": "boolean" }
+      },
+      "required": ["novelId", "updatedAt"]
+    },
+    "CheckIn": {
+      "title": "Điểm danh",
+      "description": "Lịch sử điểm danh của người dùng",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "reward": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "date", "reward", "createdAt"]
+    },
+    "Novel": {
+      "title": "Truyện",
+      "description": "Thông tin chi tiết bộ truyện",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "authorId": { "type": "string" },
+        "description": { "type": "string" },
+        "coverUrl": { "type": "string", "format": "uri" },
+        "bannerUrl": { "type": "string", "format": "uri" },
+        "genres": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["Đang ra", "Hoàn thành"] },
+        "views": { "type": "number" },
+        "rating": { "type": "number" },
+        "translationGroup": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "author", "authorId", "genres", "status"]
+    },
+    "Chapter": {
+      "title": "Chương truyện",
+      "description": "Nội dung chi tiết chương truyện",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "novelId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "chapterNumber": { "type": "number" },
+        "publishDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["novelId", "title", "content", "chapterNumber"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Thông tin cá nhân người dùng"
+    },
+    "/novels/{novelId}": {
+      "schema": "Novel",
+      "description": "Thông tin bộ truyện"
+    },
+    "/novels/{novelId}/chapters/{chapterId}": {
+      "schema": "Chapter",
+      "description": "Danh sách chương của truyện"
+    },
+    "/novels/{novelId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Danh sách bình luận của truyện"
+    },
+    "/users/{userId}/bookshelf/{novelId}": {
+      "schema": "BookshelfItem",
+      "description": "Truyện trong tủ sách cá nhân"
+    },
+    "/users/{userId}/checkins/{checkInId}": {
+      "schema": "CheckIn",
+      "description": "Lịch sử điểm danh"
+    }
+  }
+}

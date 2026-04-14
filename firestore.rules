@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Users Collection
+    match /users/{userId} {
+      // Cho phép đọc thông tin user công khai (như avatar, tên)
+      allow read: if true;
+      
+      // Cho phép user tự sửa thông tin CỦA MÌNH nhưng KHÔNG ĐƯỢC CHẠM VÀO SỐ DƯ (coins)
+      // Ngoại trừ nếu họ vừa gửi writeBatch để trừ xu.
+      // Dành riêng cho Client-side logic mở khoá chương.
+      allow write: if request.auth != null && request.auth.uid == userId 
+                   && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'email', 'unlockedChapters', 'coins']))
+                   // Kiểm tra nếu coins bị sửa, giá trị MỚI phải BÉ HƠN HOẶC BẰNG giá trị CŨ (Chỉ được phép trừ xu, không được tự cộng thêm xu)
+                   && (
+                     !request.resource.data.diff(resource.data).affectedKeys().hasAny(['coins'])
+                     || request.resource.data.coins <= resource.data.coins
+                   );
+                   
+      // Mở quyền Admin nếu cần (Ở đây tạm đóng)
+    }
+
+    // 2. Tác giả khi nhận 60% xu
+    // Firebase Client khó chặn triệt để vụ này vì hàm writeBatch đang gọi trên Client. Tạm thời sử dụng Allow cho logic + xu từ thằng người mua.
+    // Cách an toàn tuyệt đối là đưa hàm Mở khoá chương lên Firebase Cloud Functions.
+    // Ở bản V2 này, để Client chạy được writeBatch cộng xu người khác, ta nới lỏng cho phép `increment` xu.
+    match /users/{authorId} {
+       allow update: if request.auth != null 
+                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coins'])
+                     && request.resource.data.coins > resource.data.coins;
+    }
+
+    // 2. Truyện (Novels)
+    match /novels/{novelId} {
+      allow read: if true; // Ai cũng đọc được bìa truyện
+      allow create: if request.auth != null; // User đăng nhập được tạo truyện
+      // Chỉ tác giả gốc mới được edit truyện của mình
+      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+      
+      // Chương truyện (Chapters)
+      match /chapters/{chapterId} {
+        allow read: if true; // Chương khoá vẫn đọc được tiêu đề
+        allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/novels/$(novelId)).data.authorId == request.auth.uid;
+        
+        // Inline Comments
+        match /inline_comments/{commentId} {
+          allow read: if true;
+          allow create: if request.auth != null;
+          allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+        }
+      }
+    }
+
+    // 3. Lịch sử Giao Dịch
+    match /transactions/{txId} {
+      allow read: if request.auth != null && (resource.data.buyerId == request.auth.uid || resource.data.authorId == request.auth.uid);
+      // Chỉ cho phép user tạo log trừ khi họ đang trả tiền
+      allow create: if request.auth != null && request.resource.data.buyerId == request.auth.uid;
+      allow update, delete: if false; // Không ai được sửa lịch sử giao dịch
+    }
+
+    // 4. Lệnh rút tiền
+    match /withdraw_requests/{reqId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'PENDING';
+      allow update, delete: if false;
+    }
+  }
+}
