@@ -66,21 +66,32 @@ export default function AutoBotImport({ user, novels, onClose }: AutoBotImportPr
     addLog(`Đang khởi động Bot... Bắt đầu đọc file ${file.name}`);
     
     try {
-      const text = await file.text();
-      // Thuật toán bẻ chương siêu đơn giản dựa trên "Chương" và dọn dẹp kí tự trắng
-      const chapterChunks = text.split(/(?=Chương\s+\d+|Thứ\s+\d+\s+Chương|第\s*\d+\s*[章|節|节])/i).filter(c => c.trim().length > 50);
+      const rawText = await file.text();
+      const text = '\n' + rawText; // Pad with newline to catch the first chapter
+      
+      // Thuật toán bẻ chương: Bắt buộc chữ Chương phải nằm ở đầu dòng (có thể có khoảng trắng)
+      // Lọc các khối lớn hơn 300 ký tự để vứt bỏ hoàn toàn phần Mục Lục (TOC)
+      const chapterChunks = text
+        .split(/(?=\n\s*(?:Chương|Thứ)\s+\d+|\n\s*第\s*\d+\s*[章|節|节])/i)
+        .filter(c => c.trim().length > 300);
       
       setTotalChapters(chapterChunks.length);
       addLog(`🔍 Phát hiện phân tách được ${chapterChunks.length} chương truyện!`);
 
       if (chapterChunks.length === 0) {
-        throw new Error("Không nhận diện được Chapter nào! Đảm bảo cấu trúc file CÓ chứa chữ Tựa đề như 'Chương 1... '");
+        throw new Error("Không nhận diện được Chapter nào! Đảm bảo cấu trúc file CÓ chữ 'Chương 1' ở đầu dòng và mỗi chương dài hơn 300 ký tự.");
       }
 
       for (let i = 0; i < chapterChunks.length; i++) {
         let chunk = chapterChunks[i].trim();
-        let titleLine = chunk.split('\n')[0].trim();
-        let contentBody = chunk.substring(titleLine.length).trim();
+        // Lấy đoạn đầu tiên khống chế trong 200 kí tự hoặc dòng đầu tiên làm Title
+        let firstNewlineIdx = chunk.indexOf('\n');
+        if (firstNewlineIdx === -1 || firstNewlineIdx > 200) {
+            firstNewlineIdx = Math.min(chunk.length, 100);
+        }
+        
+        let titleLine = chunk.slice(0, firstNewlineIdx).trim();
+        let contentBody = chunk.slice(firstNewlineIdx).trim();
         
         let finalTitle = titleLine;
         let finalContent = contentBody;
