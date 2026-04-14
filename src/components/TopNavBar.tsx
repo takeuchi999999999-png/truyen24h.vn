@@ -188,29 +188,15 @@ export default function TopNavBar({
 
                 <Link
                   href="/vip"
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-background-light hover:bg-primary/5 cursor-pointer rounded-full border border-accent/10 transition-colors group"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-background-light hover:bg-primary/5 cursor-pointer rounded-full border border-accent/10 transition-colors group"
                 >
                   <Coins className="size-4 text-yellow-500 group-hover:scale-110 transition-transform" />
                   <span className="text-xs font-black text-text-main">{userProfile?.coins || 0}</span>
-                  <div className="size-4 bg-primary text-white rounded-full flex items-center justify-center font-black text-[10px] ml-1 shadow-sm">+</div>
                 </Link>
-
-                <div className="hidden lg:flex flex-col items-end gap-1 px-4 py-1.5 bg-background-light rounded-2xl border border-accent/10">
-                  <div className="flex items-center gap-2">
-                    <Zap className="size-3 text-primary fill-primary" />
-                    <span className="text-[10px] font-black text-text-main uppercase tracking-tighter">Cấp {userProfile?.level || 1}</span>
-                  </div>
-                  <div className="w-20 h-1 bg-accent/20 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary shadow-[0_0_8px_rgba(232,165,165,0.5)]" 
-                      style={{ width: `${((userProfile?.exp || 0) % 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
 
                 <button 
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="size-8 md:size-10 rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary transition-all relative"
+                  className="size-8 md:size-10 shrink-0 rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary transition-all relative"
                 >
                   <img 
                     src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
@@ -220,15 +206,23 @@ export default function TopNavBar({
                   />
                   {userProfile?.badges?.includes('VIP') && (
                     <div className="absolute -top-1 -right-1 bg-yellow-400 text-white rounded-full p-0.5 shadow-sm">
-                      <Crown className="size-2 md:size-3" />
+                       <Crown className="size-2 md:size-3" />
                     </div>
                   )}
                 </button>
                 {showUserMenu && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-surface rounded-2xl shadow-2xl border border-accent/10 p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="absolute top-full right-0 mt-2 w-56 bg-surface rounded-2xl shadow-2xl border border-accent/10 p-2 z-50 animate-in fade-in slide-in-from-top-2">
                     <div className="px-4 py-3 border-b border-accent/5 mb-2">
                       <p className="text-xs font-black text-text-main truncate">{user.displayName}</p>
                       <p className="text-[10px] text-muted truncate">{user.email}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between px-4 py-2 bg-gradient-to-r from-primary/10 to-transparent rounded-xl mb-2">
+                      <div className="flex items-center gap-2">
+                        <Zap className="size-3 text-primary fill-primary" />
+                        <span className="text-xs font-black text-primary">Cấp {userProfile?.level || 1}</span>
+                      </div>
+                      <div className="text-[10px] text-muted font-bold">EXP: {userProfile?.exp || 0}</div>
                     </div>
                     
                     {/* Mobile Only Quick Actions in Dropdown */}

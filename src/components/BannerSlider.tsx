@@ -10,8 +10,9 @@ interface BannerSliderProps {
 export default function BannerSlider({ novels }: BannerSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Lọc ra các truyện Hot hoặc ngẫu nhiên làm Banner
-  const bannerNovels = novels.filter(n => n.isHot).slice(0, 5);
+  // Lọc ra các truyện Hot hoặc nếu không có thì lấy 3 truyện mới nhất
+  const hotNovels = novels.filter(n => n.isHot);
+  const bannerNovels = hotNovels.length > 0 ? hotNovels.slice(0, 5) : novels.slice(0, 3);
 
   useEffect(() => {
     if (bannerNovels.length <= 1) return;
