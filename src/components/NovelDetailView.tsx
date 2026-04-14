@@ -1,4 +1,4 @@
-import { Star, BookmarkPlus, Users, Eye, BookOpen, ChevronRight, Share2, MessageSquare, Clock, Flame, Sparkles, Check, BrainCircuit, Heart } from 'lucide-react';
+import { Star, BookmarkPlus, Users, Eye, BookOpen, ChevronRight, Share2, MessageSquare, Clock, Flame, Sparkles, Check, BrainCircuit, Heart, Search, ArrowUpDown, ArrowUp, ArrowDown, List } from 'lucide-react';
 import { Novel, Chapter } from '../types';
 import { useState, useMemo, useEffect } from 'react';
 import CommentSection from './CommentSection';
@@ -6,6 +6,100 @@ import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { getAIRecommendations, getNovelSummary } from '../services/geminiService';
+
+// ─── Chapter List Panel (scrollable, fixed-height) ─────────────────────────
+function ChapterListPanel({ allChapters, onChapterSelect }: { allChapters: Chapter[]; onChapterSelect: (c: Chapter) => void }) {
+  const [search, setSearch] = useState('');
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const filtered = useMemo(() => {
+    let list = allChapters.filter(c =>
+      `${c.chapterNumber} ${c.title}`.toLowerCase().includes(search.toLowerCase())
+    );
+    return sortAsc ? list : [...list].reverse();
+  }, [allChapters, search, sortAsc]);
+
+  return (
+    <div className="mb-20">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+            <List className="size-6" />
+          </div>
+          <h3 className="font-display text-3xl font-black text-text-main uppercase tracking-tighter">
+            Danh sách chương
+            <span className="ml-3 text-base font-bold text-muted normal-case tracking-normal">({allChapters.length} chương)</span>
+          </h3>
+        </div>
+        {/* Sort toggle */}
+        <button
+          onClick={() => setSortAsc(v => !v)}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-accent/10 text-xs font-black uppercase tracking-widest text-muted hover:text-primary hover:border-primary/40 transition-all shadow-sm"
+        >
+          {sortAsc ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />}
+          {sortAsc ? 'Cũ trước' : 'Mới trước'}
+        </button>
+      </div>
+
+      {/* Search bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted" />
+        <input
+          type="text"
+          placeholder="Tìm chương... (VD: 701, Hồi Sinh...)"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full h-12 pl-11 pr-4 bg-surface border border-accent/10 rounded-2xl text-sm text-text-main placeholder:text-muted focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-text-main transition-colors"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Scrollable chapter list - fixed height */}
+      <div
+        className="h-[600px] overflow-y-auto rounded-[28px] border border-accent/5 bg-surface shadow-2xl"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(var(--primary-rgb, 200,80,80),0.3) transparent' }}
+      >
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted">
+            <Search className="size-10 opacity-30" />
+            <p className="font-bold text-sm">Không tìm thấy chương nào</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {filtered.map((chapter, idx) => (
+              <div
+                key={chapter.id}
+                onClick={() => onChapterSelect(chapter)}
+                className="flex items-center justify-between px-6 py-4 hover:bg-primary/5 cursor-pointer transition-all border-b border-accent/5 last:border-b-0 group"
+              >
+                <div className="flex flex-col min-w-0 flex-1 mr-3">
+                  <span className="font-bold text-sm text-text-main group-hover:text-primary transition-colors truncate">
+                    Chương {chapter.chapterNumber}: {chapter.title}
+                  </span>
+                  <span className="text-[11px] text-muted mt-1 flex items-center gap-1.5">
+                    <Clock className="size-3 shrink-0" />
+                    {chapter.publishDate}
+                  </span>
+                </div>
+                <div className="p-2 bg-background-light rounded-full group-hover:bg-primary group-hover:text-white transition-all shrink-0">
+                  <ChevronRight className="size-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface NovelDetailViewProps {
   novel: Novel;
@@ -375,36 +469,10 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
             )}
 
             {activeTab === 'chapters' && (
-              <div className="mb-20">
-                <div className="flex items-center justify-between mb-12">
-                  <div className="flex items-center gap-4">
-                     <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                        <Clock className="size-7" />
-                     </div>
-                     <h3 className="font-display text-4xl font-black text-text-main uppercase tracking-tighter">Chương mới nhất</h3>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {allChapters.map((chapter) => (
-                    <div 
-                      key={chapter.id}
-                      onClick={() => onChapterSelect(chapter)}
-                      className="flex items-center justify-between p-8 bg-surface rounded-[32px] hover:bg-primary/5 cursor-pointer transition-all border border-accent/5 group shadow-xl hover:shadow-primary/10"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-display font-black text-xl text-text-main group-hover:text-primary transition-colors">Chương {chapter.chapterNumber}: {chapter.title}</span>
-                        <span className="text-xs text-muted uppercase tracking-widest mt-3 font-black flex items-center gap-2">
-                          <Clock className="size-3" />
-                          {chapter.publishDate}
-                        </span>
-                      </div>
-                      <div className="p-3 bg-background-light rounded-full group-hover:bg-primary group-hover:text-white transition-all">
-                        <ChevronRight className="size-6" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ChapterListPanel
+                allChapters={allChapters}
+                onChapterSelect={onChapterSelect}
+              />
             )}
 
             {activeTab === 'comments' && (
