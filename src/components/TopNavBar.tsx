@@ -121,6 +121,23 @@ export default function TopNavBar({
               )}
             </div>
 
+            <div className="relative group">
+              <button className="flex items-center gap-1 px-4 py-2 rounded-full text-sm font-bold text-text-main transition-all duration-300 cursor-pointer hover:-translate-y-0.5 hover:bg-primary/10 hover:text-primary hover:shadow-sm">
+                Số chương <ChevronDown className="size-4 opacity-50" />
+              </button>
+              <div className="absolute top-full left-0 w-48 bg-surface shadow-2xl rounded-2xl py-2 border border-accent/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                 {['Dưới 100 chương', '100 - 500 chương', '500 - 1000 chương', 'Trên 1000 chương'].map(filter => (
+                    <button 
+                      key={filter}
+                      onClick={() => console.log('Chưa hỗ trợ lọc api: ', filter)}
+                      className="w-full text-left px-4 py-2 hover:bg-primary/10 text-sm font-semibold text-text-main hover:text-primary transition-all duration-300"
+                    >
+                      {filter}
+                    </button>
+                 ))}
+              </div>
+            </div>
+
             <button 
               onClick={() => onTabChange('bookshelf')}
               className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 cursor-pointer flex items-center hover:-translate-y-0.5 hover:shadow-sm ${activeTab === 'bookshelf' ? 'bg-primary/20 text-primary shadow-sm' : 'text-text-main hover:bg-primary/10 hover:text-primary'}`}
@@ -137,66 +154,68 @@ export default function TopNavBar({
           </nav>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4 shrink-0">
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center bg-background-light rounded-full px-4 py-2 border border-accent/10 focus-within:border-primary/50 focus-within:bg-surface transition-all w-72 group">
+        <div className="flex items-center gap-3 shrink-0">
+          <form onSubmit={handleSearchSubmit} className="hidden xl:flex items-center bg-background-light rounded-full px-4 py-2 border border-accent/10 focus-within:border-primary/50 focus-within:bg-surface transition-all w-56 group">
             <Search className="size-4 text-muted group-focus-within:text-primary mr-2" />
             <input 
               type="text" 
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Tìm truyện, tác giả..." 
-              className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted"
+              placeholder="Tìm kiếm..." 
+              className="bg-transparent border-none outline-none text-xs w-full placeholder:text-muted"
             />
           </form>
           
-          <div className="h-8 w-[1px] bg-accent/10 mx-2 hidden md:block"></div>
-
-          <button 
-            onClick={onToggleDarkMode}
-            className="p-2 md:p-2.5 rounded-full bg-background-light text-text-main hover:bg-primary/10 hover:text-primary transition-all shadow-sm border border-accent/10 shrink-0"
-            title={isDarkMode ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
-          >
-            {isDarkMode ? <Sun className="size-4 md:size-5" /> : <Moon className="size-4 md:size-5" />}
-          </button>
+          <div className="h-8 w-[1px] bg-accent/10 mx-1 hidden md:block"></div>
 
           <div className="relative shrink-0">
             {user ? (
-              <div className="flex items-center gap-2 md:gap-4">
-                <button 
-                  onClick={() => setShowCheckInModal(true)}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-xs font-black hover:bg-primary hover:text-white transition-all group"
-                  title="Điểm danh nhận quà"
-                >
-                  <Sparkles className="size-4 group-hover:animate-spin" />
-                  <span className="hidden lg:inline">Điểm danh</span>
-                </button>
+              <div className="flex items-center gap-2">
+                
+                {/* Viết truyện & Điểm danh - Stack Vertical */}
+                <div className="hidden lg:flex flex-col gap-1">
+                   <button 
+                      onClick={() => onTabChange('creator-studio')}
+                      className="px-4 py-1.5 bg-gradient-to-r from-primary to-[#ff4b4b] text-white border border-primary/20 rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-md flex items-center justify-center gap-1.5"
+                   >
+                      <BookPlus className="size-3" /> Viết Truyện
+                   </button>
+                   <button 
+                      onClick={() => setShowCheckInModal(true)}
+                      className="px-4 py-1 bg-surface text-primary rounded-full text-[10px] font-bold tracking-widest border border-primary/20 hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1.5 group"
+                   >
+                      <Sparkles className="size-3 group-hover:animate-spin" /> Điểm danh
+                   </button>
+                </div>
 
-                <button 
-                  onClick={() => onTabChange('creator-studio')}
-                  className="hidden md:flex items-center gap-2 px-6 py-2 bg-transparent text-primary border-2 border-primary rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-[0_0_15px_rgba(232,165,165,0.3)] hover:shadow-[0_0_25px_rgba(232,165,165,0.6)]"
-                >
-                  <BookPlus className="size-4" />
-                  <span>Viết Truyện</span>
-                </button>
+                {/* Chuông & Dark mode - Stack Vertical */}
+                <div className="flex flex-col gap-1 mx-1">
+                   <button className="relative p-1.5 rounded-full bg-background-light text-text-main hover:bg-primary/10 hover:text-primary border border-accent/10 flex items-center justify-center">
+                     <Bell className="size-3.5" />
+                     <span className="absolute top-0 right-0 size-2 bg-red-500 rounded-full border border-surface"></span>
+                   </button>
+                   <button 
+                     onClick={onToggleDarkMode}
+                     className="p-1.5 rounded-full bg-background-light text-text-main hover:bg-primary/10 hover:text-primary border border-accent/10 flex items-center justify-center"
+                     title={isDarkMode ? "Sáng" : "Tối"}
+                   >
+                     {isDarkMode ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
+                   </button>
+                </div>
 
-                <button 
-                  className="relative p-2 rounded-full bg-background-light text-text-main hover:bg-primary/10 hover:text-primary transition-all border border-accent/10"
-                >
-                  <Bell className="size-4 md:size-5" />
-                  <span className="absolute top-0 right-0 size-2.5 bg-red-500 rounded-full border-2 border-surface"></span>
-                </button>
-
+                {/* Số Xu */}
                 <Link
                   href="/vip"
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-background-light hover:bg-primary/5 cursor-pointer rounded-full border border-accent/10 transition-colors group"
+                  className="hidden sm:flex flex-col items-center justify-center px-3 py-1 bg-background-light hover:bg-primary/5 rounded-xl border border-accent/10 transition-colors group mx-1"
                 >
-                  <Coins className="size-4 text-yellow-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs font-black text-text-main">{userProfile?.coins || 0}</span>
+                  <Coins className="size-4 text-yellow-500 group-hover:scale-110 transition-transform mb-0.5" />
+                  <span className="text-[10px] font-black text-text-main">{userProfile?.coins || 0}</span>
                 </Link>
 
+                {/* Avatar */}
                 <button 
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="size-8 md:size-10 shrink-0 rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary transition-all relative"
+                  className="size-9 md:size-10 shrink-0 rounded-full overflow-hidden border-2 border-primary/20 hover:border-primary transition-all relative"
                 >
                   <img 
                     src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
