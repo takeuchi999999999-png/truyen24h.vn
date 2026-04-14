@@ -5,7 +5,7 @@ import { Novel, Chapter, UserProfile } from '../types';
 import WithdrawModal from './WithdrawModal';
 import AutoBotImport from './AutoBotImport';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, getDoc, getDocs, writeBatch, increment } from 'firebase/firestore';
 import { GENRES } from '../constants';
 
 interface CreatorStudioViewProps {
@@ -178,6 +178,34 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
       alert(`Lỗi đăng truyện: ${error.message || 'Thiếu quyền Firestore hoặc lỗi kết nối. Vui lòng kiểm tra tab Console (F12) để xem chi tiết mã lỗi.'}`);
     } finally {
       setIsSubmittingNovel(false);
+    }
+  };
+
+  const handleDeleteNovel = async (novelId: string, novelTitle: string) => {
+    if (!window.confirm(`⚠️ BẠN CÓ CHẮC CHẮN MUỐN XÓA VĨNH VIỄN TRUYỆN "${novelTitle}" VÀ TOÀN BỘ CHƯƠNG KHÔNG?\nHành động này không thể hoàn tác!`)) {
+      return;
+    }
+
+    try {
+      // 1. Fetch all chapters of the novel to delete them
+      const chaptersRef = collection(db, `novels/${novelId}/chapters`);
+      const snapshot = await getDocs(chaptersRef);
+      
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((docSnap) => {
+          batch.delete(docSnap.ref);
+      });
+      // Commit deleting all chapters (if batch is > 500 we might need multiple batches, but usually it's fine for simple deletes)
+      if (snapshot.docs.length > 0) {
+        await batch.commit();
+      }
+
+      // 2. Delete the Novel doc itself
+      await deleteDoc(doc(db, 'novels', novelId));
+      alert('Đã dọn dẹp sạch sẽ bộ truyện!');
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi khi xóa truyện. Vui lòng tải lại trang và thử lại.');
     }
   };
 
@@ -440,6 +468,13 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
                 >
                   <Edit3 className="size-4" />
                   <span>Sửa thông tin</span>
+                </button>
+                <button 
+                  onClick={() => handleDeleteNovel(novel.id, novel.title)}
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-red-500/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                >
+                  <Trash2 className="size-4" />
+                  <span>Xóa truyện</span>
                 </button>
               </div>
             </div>
