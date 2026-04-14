@@ -327,13 +327,15 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3">
-            <button 
-              onClick={() => updateDoc(doc(db, 'users', user.uid), { coins: increment(500) })}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-orange-500/10 text-orange-500 rounded-full font-black text-xs uppercase tracking-widest shadow-lg hover:bg-orange-500 hover:text-white transition-all"
-            >
-              <Zap className="size-4" />
-              <span>Bơm 500 Xu (Test)</span>
-            </button>
+            {user?.email && ['phamanhtung.jp@gmail.com', 'truyen24hvnn@gmail.com'].includes(user.email) && (
+              <button 
+                onClick={() => updateDoc(doc(db, 'users', user.uid), { coins: increment(500) })}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-orange-500/10 text-orange-500 rounded-full font-black text-xs uppercase tracking-widest shadow-lg hover:bg-orange-500 hover:text-white transition-all"
+              >
+                <Zap className="size-4" />
+                <span>Bơm 500 Xu (Test Admin)</span>
+              </button>
+            )}
 
             <button 
               onClick={handleWithdrawClick}
