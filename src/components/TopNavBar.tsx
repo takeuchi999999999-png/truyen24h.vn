@@ -14,6 +14,7 @@ interface TopNavBarProps {
   activeTab: 'discover' | 'bookshelf' | 'leaderboard' | 'creator-studio';
   onTabChange: (tab: 'discover' | 'bookshelf' | 'leaderboard' | 'creator-studio') => void;
   onGenreSelect: (genre: string) => void;
+  onChapterFilterSelect?: (filter: string) => void;
   onSearch: (term: string) => void;
   user: User | null;
   onLogin: () => void;
@@ -26,6 +27,7 @@ export default function TopNavBar({
   activeTab, 
   onTabChange, 
   onGenreSelect, 
+  onChapterFilterSelect,
   onSearch, 
   user, 
   onLogin, 
@@ -83,12 +85,12 @@ export default function TopNavBar({
           </Link>
           
           <nav className="hidden lg:flex items-center gap-1">
-            <button 
-              onClick={() => onTabChange('discover')}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 cursor-pointer flex items-center hover:-translate-y-0.5 hover:shadow-sm ${activeTab === 'discover' ? 'bg-primary/20 text-primary shadow-sm' : 'text-text-main hover:bg-primary/10 hover:text-primary'}`}
+            <Link 
+              href="/vip"
+              className="px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-md hover:scale-105"
             >
-              Khám phá
-            </button>
+              <Coins className="size-4" /> Nạp Xu
+            </Link>
             
             <div className="relative">
               <button 
@@ -129,7 +131,13 @@ export default function TopNavBar({
                  {['Dưới 100 chương', '100 - 500 chương', '500 - 1000 chương', 'Trên 1000 chương'].map(filter => (
                     <button 
                       key={filter}
-                      onClick={() => console.log('Chưa hỗ trợ lọc api: ', filter)}
+                      onClick={() => {
+                        if(onChapterFilterSelect) {
+                           onChapterFilterSelect(filter);
+                        } else {
+                           console.log('Chưa hỗ trợ lọc api: ', filter);
+                        }
+                      }}
                       className="w-full text-left px-4 py-2 hover:bg-primary/10 text-sm font-semibold text-text-main hover:text-primary transition-all duration-300"
                     >
                       {filter}

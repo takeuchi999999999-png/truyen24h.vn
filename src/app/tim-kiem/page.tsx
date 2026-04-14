@@ -10,6 +10,7 @@ function SearchContent() {
   const router = useRouter();
   
   const genre = searchParams.get('genre') || undefined;
+  const chapters = searchParams.get('chapters') || undefined;
   const q = searchParams.get('q') || undefined;
 
   return (
@@ -17,6 +18,7 @@ function SearchContent() {
       <TopNavBarClientWrapper />
       <FilterView 
         initialGenre={genre} 
+        initialChapters={chapters}
         initialSearch={q} 
         onNovelSelect={(novel) => router.push(`/truyen/${novel.id}`)} 
       />

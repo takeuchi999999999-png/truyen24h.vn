@@ -42,6 +42,7 @@ export default function TopNavBarClientWrapper() {
       activeTab={activeTab as any}
       onTabChange={handleTabChange}
       onGenreSelect={(genre) => router.push(`/tim-kiem?genre=${encodeURIComponent(genre)}`)}
+      onChapterFilterSelect={(filter) => router.push(`/tim-kiem?chapters=${encodeURIComponent(filter)}`)}
       onSearch={(term) => router.push(`/tim-kiem?q=${encodeURIComponent(term)}`)}
       user={user}
       onLogin={loginWithGoogle}

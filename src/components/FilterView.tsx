@@ -9,6 +9,7 @@ import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 interface FilterViewProps {
   initialGenre?: string;
   initialSearch?: string;
+  initialChapters?: string;
   onNovelSelect: (novel: Novel) => void;
 }
 
@@ -23,10 +24,11 @@ function normalize(text: string) {
     .trim();
 }
 
-export default function FilterView({ initialGenre, initialSearch, onNovelSelect }: FilterViewProps) {
+export default function FilterView({ initialGenre, initialSearch, initialChapters, onNovelSelect }: FilterViewProps) {
   const [selectedGenre, setSelectedGenre] = useState<string>(initialGenre || 'Tất cả');
   const [selectedStatus, setSelectedStatus] = useState<'Tất cả' | 'Đang ra' | 'Hoàn thành'>('Tất cả');
   const [selectedGroup, setSelectedGroup] = useState<string>('Tất cả');
+  const [selectedChapters, setSelectedChapters] = useState<string>(initialChapters || 'Tất cả');
   const [sortBy, setSortBy] = useState<'Lượt xem' | 'Đánh giá' | 'Mới nhất'>('Mới nhất');
   const [searchTerm, setSearchTerm] = useState<string>(initialSearch || '');
   const [currentPage, setCurrentPage] = useState(1);
@@ -47,18 +49,25 @@ export default function FilterView({ initialGenre, initialSearch, onNovelSelect 
     return () => unsubscribe();
   }, []);
 
-  // Update searchTerm when initialSearch changes
+  // Update searchTerm & selectedChapters when props change
   useEffect(() => {
     if (initialSearch !== undefined) {
       setSearchTerm(initialSearch);
       setCurrentPage(1);
     }
   }, [initialSearch]);
+  
+  useEffect(() => {
+    if (initialChapters !== undefined) {
+      setSelectedChapters(initialChapters);
+      setCurrentPage(1);
+    }
+  }, [initialChapters]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedGenre, selectedStatus, selectedGroup, searchTerm]);
+  }, [selectedGenre, selectedStatus, selectedGroup, selectedChapters, searchTerm]);
 
   const translationGroups = useMemo(() => {
     const groups = new Set<string>();
@@ -78,13 +87,20 @@ export default function FilterView({ initialGenre, initialSearch, onNovelSelect 
       const statusMatch = selectedStatus === 'Tất cả' || novel.status === selectedStatus;
       const groupMatch = selectedGroup === 'Tất cả' || novel.translationGroup === selectedGroup;
       
+      const chapterCount = novel.chapters ? novel.chapters.length : 0;
+      let chapterMatch = true;
+      if (selectedChapters === 'Dưới 100 chương') chapterMatch = chapterCount < 100;
+      else if (selectedChapters === '100 - 500 chương') chapterMatch = chapterCount >= 100 && chapterCount <= 500;
+      else if (selectedChapters === '500 - 1000 chương') chapterMatch = chapterCount > 500 && chapterCount <= 1000;
+      else if (selectedChapters === 'Trên 1000 chương') chapterMatch = chapterCount > 1000;
+
       const searchMatch = !searchTerm || 
         (novel.title && normalize(novel.title).includes(normalizedSearch)) || 
         (novel.author && normalize(novel.author).includes(normalizedSearch));
         
-      return genreMatch && statusMatch && groupMatch && searchMatch;
+      return genreMatch && statusMatch && groupMatch && chapterMatch && searchMatch;
     });
-  }, [allNovels, selectedGenre, selectedStatus, selectedGroup, searchTerm]);
+  }, [allNovels, selectedGenre, selectedStatus, selectedGroup, selectedChapters, searchTerm]);
 
   const totalPages = Math.ceil(filteredNovels.length / ITEMS_PER_PAGE);
   const paginatedNovels = filteredNovels.slice(
@@ -118,7 +134,7 @@ export default function FilterView({ initialGenre, initialSearch, onNovelSelect 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
             {/* Genre Filter */}
             <div>
               <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted mb-4 block">Thể loại</label>
@@ -131,6 +147,24 @@ export default function FilterView({ initialGenre, initialSearch, onNovelSelect 
                   <option value="Tất cả">Tất cả thể loại</option>
                   {GENRES.map(genre => (
                     <option key={genre} value={genre}>{genre}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 size-5 text-muted pointer-events-none group-hover:text-primary transition-colors" />
+              </div>
+            </div>
+
+            {/* Chapters Filter */}
+            <div>
+              <label className="text-[10px] uppercase tracking-[0.2em] font-black text-muted mb-4 block">Số chương</label>
+              <div className="relative group">
+                <select 
+                  value={selectedChapters}
+                  onChange={(e) => setSelectedChapters(e.target.value)}
+                  className="w-full h-14 pl-6 pr-12 bg-background-light rounded-2xl border-none outline-none appearance-none font-bold text-text-main cursor-pointer focus:ring-2 focus:ring-primary/20 transition-all"
+                >
+                  <option value="Tất cả">Mọi độ dài</option>
+                  {['Dưới 100 chương', '100 - 500 chương', '500 - 1000 chương', 'Trên 1000 chương'].map(chaps => (
+                    <option key={chaps} value={chaps}>{chaps}</option>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 size-5 text-muted pointer-events-none group-hover:text-primary transition-colors" />
