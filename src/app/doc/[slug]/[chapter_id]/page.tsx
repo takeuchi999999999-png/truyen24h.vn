@@ -1,25 +1,50 @@
-import { getDoc, doc, collection, query, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '@/firebase-backend';
+/**
+ * Server component for a single chapter page.
+ *
+ * Uses Firebase Admin SDK (HTTP REST) instead of the client SDK (gRPC)
+ * because gRPC streams don't reliably initialize inside Vercel's
+ * short-lived serverless functions. See /truyen/[slug]/page.tsx for the
+ * full rationale.
+ */
 import ReaderClient from './ReaderClient';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import { ChapterJsonLd } from '@/components/JsonLd';
+import { adminDb } from '@/lib/firebaseAdmin';
 import { serializeFirestore } from '@/lib/serialize';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 60;
+
+async function fetchNovelAndChapter(slug: string, chapterId: string) {
+  const db = adminDb();
+  const novelSnap = await db.collection('novels').doc(slug).get();
+  if (!novelSnap.exists) return null;
+
+  const chapterSnap = await db.doc(`novels/${slug}/chapters/${chapterId}`).get();
+  if (!chapterSnap.exists) return { novel: novelSnap, chapter: null };
+
+  // Sibling chapters for the in-reader chapter list.
+  const chaptersSnap = await db
+    .collection(`novels/${slug}/chapters`)
+    .orderBy('chapterNumber', 'asc')
+    .get();
+  const chaptersData = chaptersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  return {
+    novel: serializeFirestore({ id: novelSnap.id, ...novelSnap.data(), chapters: chaptersData }) as any,
+    chapter: serializeFirestore({ id: chapterSnap.id, ...chapterSnap.data() }) as any,
+  };
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string, chapter_id: string }> }) {
   const { slug, chapter_id } = await params;
-  const novelRef = doc(db, 'novels', slug);
-  const novelSnap = await getDoc(novelRef);
-  const chapterRef = doc(db, `novels/${slug}/chapters`, chapter_id);
-  const chapterSnap = await getDoc(chapterRef);
+  const result = await fetchNovelAndChapter(slug, chapter_id);
+  if (!result || !result.chapter) return { title: 'Đọc truyện' };
 
-  if (!chapterSnap.exists() || !novelSnap.exists()) return { title: 'Đọc truyện' };
-
-  const novelData = novelSnap.data();
-  const chapterData = chapterSnap.data();
-  const coverUrl = novelData.coverUrl || `https://picsum.photos/seed/novel-${slug}/400/600`;
-
-  const pageTitle = `Chương ${chapterData.chapterNumber}: ${chapterData.title} - ${novelData.title}`;
-  const pageDesc = `Đọc Chương ${chapterData.chapterNumber} của bộ truyện ${novelData.title} trên Truyen24h.`;
+  const { novel, chapter } = result as any;
+  const coverUrl = novel.coverUrl || `https://picsum.photos/seed/novel-${slug}/400/600`;
+  const pageTitle = `Chương ${chapter.chapterNumber}: ${chapter.title} - ${novel.title}`;
+  const pageDesc = `Đọc Chương ${chapter.chapterNumber} của bộ truyện ${novel.title} trên Truyen24h.`;
   const canonical = absoluteUrl(`/doc/${slug}/${chapter_id}`);
 
   return {
@@ -31,14 +56,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: pageDesc,
       url: canonical,
       siteName: SITE_NAME,
-      images: [
-        {
-          url: coverUrl,
-          width: 800,
-          height: 600,
-          alt: `Bìa truyện ${novelData.title}`,
-        },
-      ],
+      images: [{ url: coverUrl, width: 800, height: 600, alt: `Bìa truyện ${novel.title}` }],
       locale: 'vi_VN',
       type: 'article',
     },
@@ -53,22 +71,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ChapterPage({ params }: { params: Promise<{ slug: string, chapter_id: string }> }) {
   const { slug, chapter_id } = await params;
-  const novelRef = doc(db, 'novels', slug);
-  const novelSnap = await getDoc(novelRef);
-  
-  const chapterRef = doc(db, `novels/${slug}/chapters`, chapter_id);
-  const chapterSnap = await getDoc(chapterRef);
+  const result = await fetchNovelAndChapter(slug, chapter_id);
 
-  if (!novelSnap.exists() || !chapterSnap.exists()) {
-    return <div className="p-20 text-center text-white">Chương nội dung không tồn tại hoặc đã phân quyền.</div>;
-  }
-
-  const chaptersRef = collection(db, `novels/${slug}/chapters`);
-  const q = query(chaptersRef, orderBy('chapterNumber', 'asc'));
-  const chaptersSnap = await getDocs(q);
-  const chaptersData = chaptersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-  // Serialize Firestore Timestamps to plain millis before passing through
-  // the server → client boundary (Next.js cannot transport Timestamp class
-  // instances; the client component otherwise hangs on loading.tsx).
-  const novelData = serializeFirestore({ id: novelSnap.id, .
+  if (!result || !result.chapter) {
+    return <div className="p-20 text-center text-white">Chương nội dung không tồn tại ho�

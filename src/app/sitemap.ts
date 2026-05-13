@@ -1,13 +1,19 @@
+/**
+ * Sitemap — emitted on every request (Next.js calls this in a server context).
+ *
+ * Uses Firebase Admin SDK so it works reliably in Vercel serverless. The
+ * Firebase client SDK relies on long-lived gRPC streams that frequently
+ * fail to initialize inside short-lived serverless invocations.
+ */
 import { MetadataRoute } from 'next';
-import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '@/firebase-backend';
+import { adminDb } from '@/lib/firebaseAdmin';
 import { getSiteUrl } from '@/lib/site';
 
-// Sitemap sẽ được sinh lúc Deploy (build tĩnh) hoặc SSR
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
 
-  // Static pages — đăng ký với Search Console để index nhanh
   const staticPages: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: 'always', priority: 1.0 },
     { url: `${baseUrl}/bang-xep-hang`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
@@ -19,21 +25,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/dieu-khoan-su-dung`, lastModified: new Date(), changeFrequency: 'yearly', priority: 0.3 },
   ];
 
-  // Lấy danh sách ID toàn bộ truyện
   try {
-    const novelsCol = collection(db, 'novels');
-    const novelDocs = await getDocs(query(novelsCol));
-
-    const novelUrls: MetadataRoute.Sitemap = novelDocs.docs.map((doc) => ({
-      url: `${baseUrl}/truyen/${doc.id}`,
-      lastModified: new Date(doc.data().updatedAt?.toMillis?.() || Date.now()),
-      changeFrequency: 'daily',
-      priority: 0.8,
-    }));
-
+    const snap = await adminDb().collection('novels').get();
+    const novelUrls: MetadataRoute.Sitemap = snap.docs.map((d) => {
+      const data = d.data() as any;
+      const ms = data.updatedAt?.toMillis?.() ?? Date.now();
+      return {
+        url: `${baseUrl}/truyen/${d.id}`,
+        lastModified: new Date(ms),
+        changeFrequency: 'daily',
+        priority: 0.8,
+      };
+    });
     return [...staticPages, ...novelUrls];
-  } catch {
-    // Khi build chưa có Firebase credentials, fall back về static only.
-    return staticPages;
-  }
-}
+  } catch (err) {
+    // Fa
