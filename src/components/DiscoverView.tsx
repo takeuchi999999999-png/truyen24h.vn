@@ -24,7 +24,13 @@ export default function DiscoverView({ onNovelSelect }: DiscoverViewProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const qNovels = query(collection(db, 'novels'), limit(visibleLimit));
+    // Always order by updatedAt desc so freshly-published AI novels surface
+    // on the homepage instead of being skipped by `limit()` document-id order.
+    const qNovels = query(
+      collection(db, 'novels'),
+      orderBy('updatedAt', 'desc'),
+      limit(visibleLimit)
+    );
     const unsubscribeNovels = onSnapshot(qNovels, (snapshot) => {
       const fetchedNovels = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -398,15 +404,4 @@ export default function DiscoverView({ onNovelSelect }: DiscoverViewProps) {
                  <div className="flex-1 min-w-0">
                    <h4 className="font-bold text-text-main truncate group-hover:text-primary transition-colors text-sm mb-1">{novel.author}</h4>
                    <div className="flex items-center gap-1">
-                     <span className="text-[10px] text-primary uppercase font-black bg-primary/10 px-2 py-0.5 rounded">{novel.views} Điểm CV</span>
-                   </div>
-                 </div>
-               </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
-      </div>
-    </main>
-  );
-}
+                     <span className="text-[10px] text-primary uppercase font-black bg-primary/10 px-2 py-0.5 rounded">

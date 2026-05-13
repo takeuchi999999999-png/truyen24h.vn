@@ -3,6 +3,7 @@ import { db } from '@/firebase-backend';
 import ReaderClient from './ReaderClient';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import { ChapterJsonLd } from '@/components/JsonLd';
+import { serializeFirestore } from '@/lib/serialize';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string, chapter_id: string }> }) {
   const { slug, chapter_id } = await params;
@@ -67,13 +68,7 @@ export default async function ChapterPage({ params }: { params: Promise<{ slug: 
   const chaptersSnap = await getDocs(q);
   const chaptersData = chaptersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  const novelData = { id: novelSnap.id, ...novelSnap.data(), chapters: chaptersData } as any;
-  const chapterData = { id: chapterSnap.id, ...chapterSnap.data() } as any;
-
-  return (
-    <>
-      <ChapterJsonLd novel={novelData} chapter={chapterData} />
-      <ReaderClient novel={novelData} chapter={chapterData} />
-    </>
-  );
-}
+  // Serialize Firestore Timestamps to plain millis before passing through
+  // the server → client boundary (Next.js cannot transport Timestamp class
+  // instances; the client component otherwise hangs on loading.tsx).
+  const novelData = serializeFirestore({ id: novelSnap.id, .

@@ -4,6 +4,7 @@ import NovelDetailClient from './NovelDetailClient';
 import TopNavBarClientWrapper from '@/components/TopNavBarClientWrapper';
 import { absoluteUrl, SITE_NAME } from '@/lib/site';
 import { NovelJsonLd } from '@/components/JsonLd';
+import { serializeFirestore } from '@/lib/serialize';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -54,13 +55,6 @@ export default async function NovelPage({ params }: { params: Promise<{ slug: st
     return <div className="p-20 text-center text-white">Truyện không tồn tại hoặc đã bị xóa.</div>;
   }
 
-  const novelData = { id: novelSnap.id, ...novelSnap.data() } as any;
-
-  return (
-    <>
-      <TopNavBarClientWrapper />
-      <NovelJsonLd novel={novelData} />
-      <NovelDetailClient novel={novelData} />
-    </>
-  );
-}
+  // Server → client serialization: Firestore Timestamps from serverTimestamp()
+  // writes are class instances that Next.js cannot JSON-serialize, leaving
+  // the client co

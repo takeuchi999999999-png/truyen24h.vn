@@ -137,11 +137,13 @@ export default function AiStudioClient() {
   }
 
   async function runDailyJob() {
-    if (!confirm('Chạy daily pipeline? Sẽ sinh 2 truyện mới + 5 chương tiếp.')) return;
+    // Smaller default load so it fits within Vercel Hobby's 60s function limit.
+    // Heavy daily quota happens via the scheduled cron route which has 300s budget.
+    if (!confirm('Chạy daily pipeline? Sẽ sinh 1 truyện mới + 3 chương tiếp (tổng ~ 40s).')) return;
     setBusy('daily');
     setDailySummary(null);
     try {
-      const data = await callApi('/api/admin/daily-run', { newNovels: 2, continueNovels: 5 });
+      const data = await callApi('/api/admin/daily-run', { newNovels: 1, continueNovels: 3 });
       setDailySummary(data);
       flash('ok', `Done: +${data.newNovelsCreated.length} truyện, +${data.chaptersContinued.length} chương`);
     } catch (e: any) {
@@ -281,9 +283,4 @@ export default function AiStudioClient() {
 
 function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="p-4 bg-background/40 rounded-xl">
-      <div className={`text-3xl font-black ${color}`}>{value}</div>
-      <div className="text-xs text-muted uppercase tracking-wider">{label}</div>
-    </div>
-  );
-}
+    <div className="p-4 bg-background/40
