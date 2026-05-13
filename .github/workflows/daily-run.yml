@@ -1,0 +1,64 @@
+# Daily AI run — fallback cron khi Vercel Hobby plan không hỗ trợ cron.
+#
+# Trigger:
+#   - Schedule: 01:00 UTC mỗi ngày = 08:00 Asia/Ho_Chi_Minh.
+#   - Manual: vào Actions tab → "Daily AI Story Run" → Run workflow.
+#
+# Yêu cầu secrets trên GitHub repo:
+#   ADMIN_API_TOKEN        — chuỗi 64 ký tự hex (cùng giá trị với env trên Vercel)
+#   SITE_URL               — https://truyen24h.vn (hoặc preview URL)
+#
+# Vào: Settings → Secrets and variables → Actions → New repository secret
+name: Daily AI Story Run
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      newNovels:
+        description: "Số truyện mới (0-5)"
+        default: "2"
+        required: false
+      continueNovels:
+        description: "Số chương tiếp (0-20)"
+        default: "5"
+        required: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit /api/admin/daily-run-cron
+        env:
+          ADMIN_API_TOKEN: ${{ secrets.ADMIN_API_TOKEN }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+          NEW_NOVELS: ${{ github.event.inputs.newNovels || '2' }}
+          CONTINUE_NOVELS: ${{ github.event.inputs.continueNovels || '5' }}
+        run: |
+          if [ -z "$ADMIN_API_TOKEN" ] || [ -z "$SITE_URL" ]; then
+            echo "::error::ADMIN_API_TOKEN or SITE_URL secret not configured"
+            exit 1
+          fi
+          echo "Triggering daily run on $SITE_URL ..."
+          response=$(curl -sS -w "\n__HTTP__%{http_code}" --max-time 600 \
+            -H "Authorization: Bearer $ADMIN_API_TOKEN" \
+            "$SITE_URL/api/admin/daily-run-cron?newNovels=$NEW_NOVELS&continueNovels=$CONTINUE_NOVELS")
+          body=$(echo "$response" | sed '$d')
+          code=$(echo "$response" | tail -1 | sed 's/__HTTP__//')
+          echo "HTTP $code"
+          echo "Body:"
+          echo "$body" | head -c 4000
+          if [ "$code" != "200" ]; then
+            echo "::error::Daily run failed with HTTP $code"
+            exit 1
+          fi
+          # Surface counts in the GitHub UI
+          new=$(echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('newNovelsCreated',[])))" 2>/dev/null || echo "?")
+          cont=$(echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('chaptersContinued',[])))" 2>/dev/null || echo "?")
+          errs=$(echo "$body" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('errors',[])))" 2>/dev/null || echo "?")
+          echo "## Daily Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- New novels: **$new**" >> $GITHUB_STEP_SUMMARY
+          echo "- Chapters continued: **$cont**" >> $GITHUB_STEP_SUMMARY
+          echo "- Errors: **$errs**" >> $GITHUB_STEP_SUMMARY
