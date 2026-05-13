@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, handleFirestoreError, OperationType, auth, storage } from '../firebase';
 import { doc, setDoc, serverTimestamp, onSnapshot, getDoc, collection, query, orderBy, addDoc } from 'firebase/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ReaderViewProps {
   novel: Novel;
@@ -27,7 +28,6 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
 
   // ZHIHU INLINE COMMENTS STATE
@@ -121,27 +121,15 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
     return acc;
   }, {} as Record<number, InlineComment[]>);
 
-  useEffect(() => {
-    // Only listen to auth state to get userProfile
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        setUserProfile(null);
-        return;
-      }
-      const unsubscribeDoc = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-        if (docSnap.exists()) setUserProfile(docSnap.data() as UserProfile);
-      });
-      return () => unsubscribeDoc();
-    });
-    return () => unsubscribeAuth();
-  }, []);
+  // Use AuthContext instead of duplicate listener
+  const { userProfile } = useAuth();
 
   const handleUnlockChapter = async () => {
     if (!auth.currentUser || !userProfile) {
       if (onLogin) return onLogin();
       return alert('Vui lòng đăng nhập!');
     }
-    const price = chapter.price || 50; // mặc định 50 Xu
+    const price = chapter.price || 50;
     if ((userProfile.coins || 0) < price) {
       return alert('Bạn không đủ Xu. Vui lòng nạp thêm Xu để tiếp tục!');
     }
@@ -151,16 +139,16 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
       const { writeBatch, increment } = await import('firebase/firestore');
       const batch = writeBatch(db);
 
-      // 1. Trừ tiền Độc giả & Cập nhật danh sách chương đã mở
+      // 1. Trừ xu người mua + cập nhật danh sách chương đã mở
       const buyerRef = doc(db, 'users', auth.currentUser.uid);
       batch.set(buyerRef, {
         coins: userProfile.coins - price,
         unlockedChapters: [...(userProfile.unlockedChapters || []), chapter.id]
       }, { merge: true });
 
-      // 2. Chuyển 60% Xu cho Tác giả truyện (Nếu người mua ko phải chính tác giả)
+      // 2. Chuyển 60% Xu cho tác giả (nếu người mua không phải tác giả)
       if (novel.authorId && novel.authorId !== auth.currentUser.uid) {
-        const authorShare = Math.floor(price * 0.6); // Khúc này là 60%
+        const authorShare = Math.floor(price * 0.6);
         const platformFee = price - authorShare;
 
         const authorRef = doc(db, 'users', novel.authorId);
@@ -168,7 +156,7 @@ export default function ReaderView({ novel, chapter, onBack, onChapterChange, on
           coins: increment(authorShare)
         }, { merge: true });
 
-        // 3. Ghi vào Sổ Kế Toán (transactions log)
+        // 3. Ghi vào sổ giao dịch
         const logRef = doc(collection(db, 'transactions'));
         batch.set(logRef, {
           type: 'UNLOCK_CHAPTER',

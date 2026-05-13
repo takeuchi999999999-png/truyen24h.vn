@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { BookPlus, Crown, Zap, DollarSign, Rocket, ShieldCheck, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { BookPlus, Crown, Zap, DollarSign, Rocket, ShieldCheck, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
 import TopNavBarClientWrapper from '@/components/TopNavBarClientWrapper';
 import Footer from '@/components/Footer';
 
@@ -21,7 +21,7 @@ export default function AuthorLandingPage() {
           
           <div className="max-w-4xl mx-auto text-center relative z-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-black text-xs uppercase tracking-widest border border-primary/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <SparklesIcon className="size-4" /> Nền tảng Thế Hệ Mới
+              <Sparkles className="size-4" /> Nền tảng Thế Hệ Mới
             </div>
             
             <h1 className="text-5xl md:text-7xl font-black font-display tracking-tighter leading-tight mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -170,10 +170,3 @@ export default function AuthorLandingPage() {
   );
 }
 
-function SparklesIcon(props: any) {
-  return (
-    <svg {...props} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}

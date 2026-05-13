@@ -7,6 +7,8 @@ import AutoBotImport from './AutoBotImport';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, orderBy, getDoc, getDocs, writeBatch, increment } from 'firebase/firestore';
 import { GENRES } from '../constants';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdmin } from '@/lib/admin';
 
 interface CreatorStudioViewProps {
   user: User | null;
@@ -16,9 +18,11 @@ interface CreatorStudioViewProps {
 export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewProps) {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showAutoBot, setShowAutoBot] = useState(false);
+
+  // Use shared AuthContext — no duplicate listener
+  const { userProfile, isAdminUser } = useAuth();
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
   const [selectedNovelForChapters, setSelectedNovelForChapters] = useState<Novel | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -101,13 +105,8 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
       handleFirestoreError(error, OperationType.LIST, 'novels');
     });
 
-    const unsubscribeProfile = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-      if (docSnap.exists()) setUserProfile(docSnap.data() as UserProfile);
-    });
-
     return () => {
       unsubscribeNovels();
-      unsubscribeProfile();
     };
   }, [user]);
 
@@ -334,7 +333,7 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
         </div>
 
         <div className="flex gap-3">
-          {user?.email && ['phamanhtung.jp@gmail.com', 'truyen24hvnn@gmail.com'].includes(user.email) && (
+          {isAdminUser && (
             <button 
               onClick={() => setShowAutoBot(true)}
               className="flex items-center gap-2 px-6 py-4 bg-orange-500 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-orange-500/20 hover:opacity-90 transition-all"
@@ -368,7 +367,7 @@ export default function CreatorStudioView({ user, onLogin }: CreatorStudioViewPr
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3">
-            {user?.email && ['phamanhtung.jp@gmail.com', 'truyen24hvnn@gmail.com'].includes(user.email) && (
+            {isAdminUser && (
               <button 
                 onClick={() => updateDoc(doc(db, 'users', user.uid), { coins: increment(500) })}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-orange-500/10 text-orange-500 rounded-full font-black text-xs uppercase tracking-widest shadow-lg hover:bg-orange-500 hover:text-white transition-all"

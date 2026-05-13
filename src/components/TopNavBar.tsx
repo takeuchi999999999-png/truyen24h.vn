@@ -1,14 +1,13 @@
 "use client";
 import { Search, ChevronDown, Menu, BookMarked, LogIn, LogOut, Sun, Moon, User as UserIcon, Coins, Sparkles, Trophy, Zap, Crown, BookPlus, Bell } from 'lucide-react';
 import { GENRES } from '../constants';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { User } from 'firebase/auth';
 import ProfileEditModal from './ProfileEditModal';
 import CheckInModal from './CheckInModal';
 import Link from 'next/link';
-import { db } from '../firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { UserProfile } from '../types';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdmin } from '@/lib/admin';
 
 interface TopNavBarProps {
   activeTab: 'discover' | 'bookshelf' | 'leaderboard' | 'creator-studio';
@@ -41,30 +40,8 @@ export default function TopNavBar({
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
 
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setUserProfile(null);
-      return;
-    }
-
-    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      if (doc.exists()) {
-        let profile = doc.data() as UserProfile;
-        if (user.email === 'phamanhtung.jp@gmail.com' || user.email === 'truyen24hvnn@gmail.com') {
-          profile = {
-            ...profile,
-            coins: 99999999, // Setup Admin Testing Coins
-            badges: Array.from(new Set([...(profile.badges || []), 'VIP', 'Admin']))
-          };
-        }
-        setUserProfile(profile);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  // Use shared AuthContext instead of duplicate listener
+  const { userProfile, isAdminUser } = useAuth();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,7 +252,7 @@ export default function TopNavBar({
                       <BookPlus className="size-4" />
                       Creator Studio
                     </button>
-                    {(user.email === 'phamanhtung.jp@gmail.com' || user.email === 'truyen24hvnn@gmail.com') && (
+                    {isAdminUser && (
                       <button 
                         onClick={() => {
                           window.location.href = '/admin';

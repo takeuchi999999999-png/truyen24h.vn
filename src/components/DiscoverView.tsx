@@ -243,6 +243,14 @@ export default function DiscoverView({ onNovelSelect }: DiscoverViewProps) {
                             Hot
                           </span>
                         )}
+                        {(novel as any).aiAssisted && (
+                          <span
+                            title="Tác phẩm có hỗ trợ của AI"
+                            className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/15 text-yellow-500 text-[9px] font-black rounded-lg uppercase border border-yellow-500/30"
+                          >
+                            AI
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="text-muted font-medium truncate max-w-[150px]">{novel.author}</span>

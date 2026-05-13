@@ -82,58 +82,64 @@ export default function AutoBotImport({ user, novels, onClose }: AutoBotImportPr
         throw new Error("Không nhận diện được Chapter nào! Đảm bảo cấu trúc file CÓ chữ 'Chương 1' ở đầu dòng và mỗi chương dài hơn 300 ký tự.");
       }
 
-      for (let i = 0; i < chapterChunks.length; i++) {
-        let chunk = chapterChunks[i].trim();
-        // Lấy đoạn đầu tiên khống chế trong 200 kí tự hoặc dòng đầu tiên làm Title
-        let firstNewlineIdx = chunk.indexOf('\n');
-        if (firstNewlineIdx === -1 || firstNewlineIdx > 200) {
-            firstNewlineIdx = Math.min(chunk.length, 100);
-        }
+      // Upload song song 5 chapters 1 lúc (nhanh hơn 5x)
+      const BATCH_SIZE = needTranslation ? 1 : 5;
+      
+      for (let i = 0; i < chapterChunks.length; i += BATCH_SIZE) {
+        const batch = chapterChunks.slice(i, i + BATCH_SIZE);
         
-        let titleLine = chunk.slice(0, firstNewlineIdx).trim();
-        let contentBody = chunk.slice(firstNewlineIdx).trim();
-        
-        let finalTitle = titleLine;
-        let finalContent = contentBody;
-
-        if (needTranslation) {
-          addLog(`🤖 [AI] Đang dịch chương ${i + 1}/${chapterChunks.length}...`);
-          try {
-             const translatedCh = await runGeminiTranslation(chunk);
-             const lines = translatedCh.split('\n');
-             finalTitle = lines[0].trim();
-             finalContent = lines.slice(1).join('\n').trim();
-             addLog(`✅ Dịch đoạn ${i + 1} hoàn tất!`);
-          } catch (e: any) {
-             addLog(`❌ Lỗi AI ở chương ${i+1}: ${e.message}`);
-             finalContent = chunk; // Fallback to raw
+        const promises = batch.map(async (chunk, batchIdx) => {
+          const chapterIndex = i + batchIdx;
+          let rawChunk = chunk.trim();
+          
+          // Lấy title từ dòng đầu
+          let firstNewlineIdx = rawChunk.indexOf('\n');
+          if (firstNewlineIdx === -1 || firstNewlineIdx > 200) {
+            firstNewlineIdx = Math.min(rawChunk.length, 100);
           }
-        }
+          
+          let finalTitle = rawChunk.slice(0, firstNewlineIdx).trim();
+          let finalContent = rawChunk.slice(firstNewlineIdx).trim();
 
-        // Lọc title rác
-        if (finalTitle.length > 100) finalTitle = `Chương ${i+1}`;
+          if (needTranslation) {
+            addLog(`🤖 [AI] Đang dịch chương ${chapterIndex + 1}/${chapterChunks.length}...`);
+            try {
+              const translatedCh = await runGeminiTranslation(rawChunk);
+              const lines = translatedCh.split('\n');
+              finalTitle = lines[0].trim();
+              finalContent = lines.slice(1).join('\n').trim();
+              addLog(`✅ Dịch đoạn ${chapterIndex + 1} hoàn tất!`);
+            } catch (e: any) {
+              addLog(`❌ Lỗi AI ở chương ${chapterIndex + 1}: ${e.message}`);
+              finalContent = rawChunk;
+            }
+          }
 
-        // Bơm lên Firestore
-        addLog(`⬆️ Đẩy dữ liệu Chương ${i + 1} lên máy chủ Firebase...`);
-        const novelRef = doc(db, 'novels', selectedNovelId);
-        const chapterRef = doc(collection(novelRef, 'chapters'));
-        
-        const isChapterVip = vipThreshold > 0 && (i + 1) >= vipThreshold;
+          if (finalTitle.length > 100) finalTitle = `Chương ${chapterIndex + 1}`;
 
-        await setDoc(chapterRef, {
-          id: chapterRef.id,
-          title: finalTitle,
-          content: finalContent,
-          chapterNumber: i + 1,
-          publishDate: new Date().toISOString(),
-          isVip: isChapterVip,
-          price: isChapterVip ? vipPrice : 0,
+          addLog(`⬆️ Đẩy Chương ${chapterIndex + 1} lên Firebase...`);
+          const novelRef = doc(db, 'novels', selectedNovelId);
+          const chapterRef = doc(collection(novelRef, 'chapters'));
+          
+          const isChapterVip = vipThreshold > 0 && (chapterIndex + 1) >= vipThreshold;
+
+          await setDoc(chapterRef, {
+            id: chapterRef.id,
+            title: finalTitle,
+            content: finalContent,
+            chapterNumber: chapterIndex + 1,
+            publishDate: new Date().toISOString(),
+            isVip: isChapterVip,
+            price: isChapterVip ? vipPrice : 0,
+          });
+          
+          setProgress(prev => prev + 1);
         });
+
+        await Promise.all(promises);
         
-        setProgress(i + 1);
-        
-        // Thở xíu để ko chết API
-        if (needTranslation) await new Promise(r => setTimeout(r, 2000));
+        // Delay nhẹ khi dịch AI
+        if (needTranslation) await new Promise(r => setTimeout(r, 500));
       }
 
       addLog(`🎉 HOÀN TẤT TẢI LÊN TOÀN BỘ ${chapterChunks.length} CHƯƠNG!`);

@@ -6,6 +6,7 @@ import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, orderBy, onSnapshot, doc, setDoc, serverTimestamp, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { getAIRecommendations, getNovelSummary } from '../services/geminiService';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ─── Chapter List Panel (scrollable, fixed-height) ─────────────────────────
 function ChapterListPanel({ allChapters, onChapterSelect }: { allChapters: Chapter[]; onChapterSelect: (c: Chapter) => void }) {
@@ -118,10 +119,12 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [dynamicChapters, setDynamicChapters] = useState<Chapter[]>([]);
   const [limitedNovels, setLimitedNovels] = useState<Novel[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [donateAmount, setDonateAmount] = useState<number>(100);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
+
+  // Use shared AuthContext — no duplicate listener
+  const { userProfile } = useAuth();
 
   // ✅ Fetch 30 novels một lần bằng getDocs (không onSnapshot — không real-time overhead)
   useEffect(() => {
@@ -179,19 +182,7 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
     fetchAI();
   }, [limitedNovels, novel]);
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        if (data.email === 'phamanhtung.jp@gmail.com' || data.email === 'truyen24hvnn@gmail.com') {
-           data.coins = 99999999;
-        }
-        setUserProfile(data);
-      }
-    });
-    return () => unsubscribe();
-  }, [user]);
+  // UserProfile now comes from AuthContext (above)
 
   const handleDonate = async (amount: number) => {
     if (!user || !userProfile) {
@@ -210,13 +201,13 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
         return;
       }
       
-      // Deduct from reader and increment contributionScore
+      // Trừ xu người tặng + cộng điểm đóng góp
       await updateDoc(doc(db, 'users', user.uid), { 
         coins: increment(-amount),
         contributionScore: increment(amount) 
       });
       
-      // Add to author
+      // Cộng xu cho tác giả
       await updateDoc(doc(db, 'users', novel.authorId), { coins: increment(amount) });
       
       alert(`Gửi tặng tác giả ${amount.toLocaleString()} Xu thành công! Đại gia thật hào phóng!`);
@@ -284,6 +275,14 @@ export default function NovelDetailView({ novel, onChapterSelect, onNovelSelect,
                 <span className="flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 bg-gradient-to-r from-red-600 to-orange-500 text-white rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-500/30">
                   <Flame className="size-3 fill-white" />
                   Hot
+                </span>
+              )}
+              {(novel as any).aiAssisted && (
+                <span
+                  title="Tác phẩm có hỗ trợ của AI — xem chính sách tại /gioi-thieu"
+                  className="flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 bg-yellow-500/15 text-yellow-500 border border-yellow-500/30 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest"
+                >
+                  AI-assisted
                 </span>
               )}
               {novel.genres.map(genre => (

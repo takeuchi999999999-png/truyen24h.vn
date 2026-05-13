@@ -1,19 +1,21 @@
 import TopNavBarClientWrapper from '@/components/TopNavBarClientWrapper';
 import DiscoverClient from './DiscoverClient';
+import { getSiteUrl, SITE_NAME } from '@/lib/site';
 
 export const metadata = {
-  title: 'Truyen24h - Đọc Truyện VIP, Nền Tảng Sáng Tác Hiện Đại',
+  title: 'Truyen24h.vn - Đọc Truyện VIP, Nền Tảng Sáng Tác Hiện Đại',
   description: 'Nền tảng đọc truyện online và sáng tác truyện Việt Nam. Đọc truyện miễn phí, truyện VIP bản quyền nhanh nhất, chất lượng tốt nhất với trải nghiệm vượt trội.',
+  alternates: { canonical: getSiteUrl() },
   openGraph: {
-    title: 'Truyen24h - Đọc Truyện VIP',
+    title: 'Truyen24h.vn - Đọc Truyện VIP',
     description: 'Nền tảng đọc truyện, tiểu thuyết online chất lượng cao.',
-    url: 'https://truyen24h.com',
-    siteName: 'Truyen24h',
+    url: getSiteUrl(),
+    siteName: SITE_NAME,
     images: [
       {
-        url: 'https://picsum.photos/seed/truyen24h/1200/630', // temporary placeholder banner
-        width: 1200,
-        height: 630,
+        url: '/logo.jpg',
+        width: 512,
+        height: 512,
         alt: 'Truyen24h Banner',
       },
     ],

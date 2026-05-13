@@ -4,6 +4,7 @@
 @theme {
   --font-display: "Newsreader", serif;
   --font-ui: "Outfit", sans-serif;
+  --font-reading: "Times New Roman", "Newsreader", "Georgia", serif;
   
   --color-primary: var(--primary);
   --color-background-light: var(--background);
@@ -41,7 +42,25 @@
 
 @layer base {
   body {
-    @apply bg-background-light text-text-main font-ui antialiased transition-colors duration-300;
+    @apply bg-background-light text-text-main font-reading antialiased transition-colors duration-300;
+  }
+  
+  /* UI elements (buttons, nav, labels, badges) dùng Outfit cho hiện đại */
+  button, a, nav, label, select, input, 
+  [class*="tracking-"], [class*="uppercase"] {
+    font-family: "Outfit", sans-serif;
+  }
+  
+  /* Headings dùng Newsreader cho sang trọng */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Newsreader", serif;
+  }
+  
+  /* Nội dung đọc truyện — Times New Roman cho dễ đọc nhất */
+  p, article, .prose, .chapter-content, .novel-description {
+    font-family: "Times New Roman", "Newsreader", "Georgia", serif;
+    line-height: 1.85;
+    letter-spacing: 0.01em;
   }
 }
 

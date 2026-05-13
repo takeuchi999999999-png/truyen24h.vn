@@ -1,6 +1,8 @@
 import { getDoc, doc, collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase-backend';
 import ReaderClient from './ReaderClient';
+import { absoluteUrl, SITE_NAME } from '@/lib/site';
+import { ChapterJsonLd } from '@/components/JsonLd';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string, chapter_id: string }> }) {
   const { slug, chapter_id } = await params;
@@ -8,24 +10,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const novelSnap = await getDoc(novelRef);
   const chapterRef = doc(db, `novels/${slug}/chapters`, chapter_id);
   const chapterSnap = await getDoc(chapterRef);
-  
+
   if (!chapterSnap.exists() || !novelSnap.exists()) return { title: 'Đọc truyện' };
-  
+
   const novelData = novelSnap.data();
   const chapterData = chapterSnap.data();
   const coverUrl = novelData.coverUrl || `https://picsum.photos/seed/novel-${slug}/400/600`;
 
   const pageTitle = `Chương ${chapterData.chapterNumber}: ${chapterData.title} - ${novelData.title}`;
   const pageDesc = `Đọc Chương ${chapterData.chapterNumber} của bộ truyện ${novelData.title} trên Truyen24h.`;
+  const canonical = absoluteUrl(`/doc/${slug}/${chapter_id}`);
 
   return {
     title: pageTitle,
     description: pageDesc,
+    alternates: { canonical },
     openGraph: {
       title: pageTitle,
       description: pageDesc,
-      url: `https://truyen24h.com/doc/${slug}/${chapter_id}`,
-      siteName: 'Truyen24h',
+      url: canonical,
+      siteName: SITE_NAME,
       images: [
         {
           url: coverUrl,
@@ -67,6 +71,9 @@ export default async function ChapterPage({ params }: { params: Promise<{ slug: 
   const chapterData = { id: chapterSnap.id, ...chapterSnap.data() } as any;
 
   return (
-    <ReaderClient novel={novelData} chapter={chapterData} />
+    <>
+      <ChapterJsonLd novel={novelData} chapter={chapterData} />
+      <ReaderClient novel={novelData} chapter={chapterData} />
+    </>
   );
 }

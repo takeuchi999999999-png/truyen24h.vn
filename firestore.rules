@@ -3,43 +3,38 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // 1. Users Collection
     match /users/{userId} {
-      // Cho phép đọc thông tin user công khai (như avatar, tên)
+      // Cho phép đọc thông tin user công khai
       allow read: if true;
       
-      // Cho phép user tự sửa thông tin CỦA MÌNH nhưng KHÔNG ĐƯỢC CHẠM VÀO SỐ DƯ (coins)
-      // Ngoại trừ nếu họ vừa gửi writeBatch để trừ xu.
-      // Dành riêng cho Client-side logic mở khoá chương.
+      // Cho phép user tự sửa thông tin CỦA MÌNH
+      // Coins chỉ được GIẢM (trả xu khi unlock/donate), KHÔNG được tự cộng
       allow write: if request.auth != null && request.auth.uid == userId 
-                   && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'email', 'unlockedChapters', 'coins']))
-                   // Kiểm tra nếu coins bị sửa, giá trị MỚI phải BÉ HƠN HOẶC BẰNG giá trị CŨ (Chỉ được phép trừ xu, không được tự cộng thêm xu)
+                   && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'email', 'unlockedChapters', 'donateQR', 'lastCheckIn', 'coins', 'contributionScore', 'badges']))
                    && (
                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['coins'])
                      || request.resource.data.coins <= resource.data.coins
                    );
-                   
-      // Mở quyền Admin nếu cần (Ở đây tạm đóng)
     }
 
-    // 2. Tác giả khi nhận 60% xu
-    // Firebase Client khó chặn triệt để vụ này vì hàm writeBatch đang gọi trên Client. Tạm thời sử dụng Allow cho logic + xu từ thằng người mua.
-    // Cách an toàn tuyệt đối là đưa hàm Mở khoá chương lên Firebase Cloud Functions.
-    // Ở bản V2 này, để Client chạy được writeBatch cộng xu người khác, ta nới lỏng cho phép `increment` xu.
+    // 2. Cho phép CỘNG xu cho tác giả khi mua chương/donate
+    // Chỉ cho phép: user đã đăng nhập + chỉ sửa field coins + coins tăng lên (increment)
+    // + KHÔNG được tự cộng cho CHÍNH MÌNH (ngăn exploit)
     match /users/{authorId} {
        allow update: if request.auth != null 
+                     && request.auth.uid != authorId
                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coins'])
                      && request.resource.data.coins > resource.data.coins;
     }
 
-    // 2. Truyện (Novels)
+    // 3. Truyện (Novels)
     match /novels/{novelId} {
-      allow read: if true; // Ai cũng đọc được bìa truyện
-      allow create: if request.auth != null; // User đăng nhập được tạo truyện
-      // Chỉ tác giả gốc mới được edit truyện của mình
+      allow read: if true;
+      allow create: if request.auth != null;
       allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
       
       // Chương truyện (Chapters)
       match /chapters/{chapterId} {
-        allow read: if true; // Chương khoá vẫn đọc được tiêu đề
+        allow read: if true;
         allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/novels/$(novelId)).data.authorId == request.auth.uid;
         
         // Inline Comments
@@ -51,15 +46,14 @@ service cloud.firestore {
       }
     }
 
-    // 3. Lịch sử Giao Dịch
+    // 4. Lịch sử Giao Dịch
     match /transactions/{txId} {
       allow read: if request.auth != null && (resource.data.buyerId == request.auth.uid || resource.data.authorId == request.auth.uid);
-      // Chỉ cho phép user tạo log trừ khi họ đang trả tiền
       allow create: if request.auth != null && request.resource.data.buyerId == request.auth.uid;
-      allow update, delete: if false; // Không ai được sửa lịch sử giao dịch
+      allow update, delete: if false;
     }
 
-    // 4. Lệnh rút tiền
+    // 5. Lệnh rút tiền
     match /withdraw_requests/{reqId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'PENDING';

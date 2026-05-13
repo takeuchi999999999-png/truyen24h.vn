@@ -4,13 +4,13 @@ import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, o
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  projectId: "webtruyenhay-ae0eb",
-  appId: "1:767174877469:web:aa065597afba0ef52f41f4",
-  apiKey: "AIzaSyA-ZiYU6TkYhaYzVs79XqDKcvqMlHQp0VY",
-  authDomain: "webtruyenhay-ae0eb.firebaseapp.com",
-  storageBucket: "webtruyenhay-ae0eb.firebasestorage.app",
-  messagingSenderId: "767174877469",
-  measurementId: "G-7Y6041HHNT"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
@@ -38,7 +38,6 @@ export const loginWithGoogle = async () => {
     return user;
   } catch (error: any) {
     console.error("Error logging in:", error);
-    alert("Lỗi Firebase Auth: " + (error.message || String(error)) + `\n\n[MÃ ĐANG DÙNG CỦA ANH KẾT NỐI VÀO LÀ LÀ]:\n${firebaseConfig.apiKey}\n\n(Lưu ý: Bạn cần bật Google Sign-in trong Firebase Console và thêm localhost vào Authorized domains!)`);
     throw error;
   }
 };

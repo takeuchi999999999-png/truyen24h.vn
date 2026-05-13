@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Mail, MessageCircle, Shield, FileText, ChevronRight } from 'lucide-react';
+import { Mail, MessageCircle, Shield, FileText, ChevronRight, Info, Sparkles } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -39,6 +39,11 @@ export default function Footer() {
               <li>
                 <Link href="/bang-xep-hang" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2 group">
                   <ChevronRight className="size-3 text-accent group-hover:text-primary transition-colors" /> Bảng Xếp Hạng
+                </Link>
+              </li>
+              <li>
+                <Link href="/gioi-thieu" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="size-3 text-accent group-hover:text-primary transition-colors" /> Giới Thiệu
                 </Link>
               </li>
             </ul>
@@ -83,12 +88,26 @@ export default function Footer() {
 
         </div>
 
-        <div className="mt-12 pt-8 border-t border-accent/10 flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* AI Content Disclosure — bắt buộc cho AdSense + tuân thủ minh bạch */}
+        <div className="mt-10 p-4 rounded-2xl bg-yellow-500/5 border border-yellow-500/20 flex items-start gap-3">
+          <Sparkles className="size-5 text-yellow-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-muted leading-relaxed">
+            <strong className="text-yellow-500">Minh bạch AI:</strong> Một phần nội dung trên
+            Truyen24h.vn được sinh ra với sự hỗ trợ của trí tuệ nhân tạo (Google Gemini).
+            Các tác phẩm như vậy luôn được gắn nhãn <em className="text-yellow-500 not-italic">"AI-assisted"</em>
+            {' '}tại trang chi tiết.{' '}
+            <Link href="/gioi-thieu" className="text-primary hover:underline">Tìm hiểu thêm</Link>.
+          </p>
+        </div>
+
+        <div className="mt-8 pt-8 border-t border-accent/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted font-medium">
             &copy; {new Date().getFullYear()} Truyen24h.vn. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-             <p className="text-[10px] uppercase font-black tracking-widest text-muted/50">Coded with 🤍 by AI</p>
+             <Link href="/gioi-thieu" className="text-[10px] uppercase font-black tracking-widest text-muted/50 hover:text-primary flex items-center gap-1.5">
+               <Info className="size-3" /> About
+             </Link>
           </div>
         </div>
       </div>

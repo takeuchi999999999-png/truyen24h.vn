@@ -7,10 +7,23 @@ import { db, auth } from '../../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
+/**
+ * Xu top-up packages.
+ *
+ * Why we use a high-bonus xu pack instead of a true subscription flag:
+ * the existing PayOS webhook only knows how to credit `coins` to a user.
+ * Modelling "VIP tháng" as a fat xu bundle keeps the payment flow
+ * unchanged while still giving readers ~30 chapters of headroom.
+ *
+ * If/when we wire a `vipUntil` timestamp end-to-end, we'll switch this
+ * pack's id to "monthly" and update the webhook to set that field.
+ */
 const PACKAGES = [
+  { id: 'pack0', vnd: 5000, coins: 60, bonus: 10, starter: true },
   { id: 'pack1', vnd: 10000, coins: 100, bonus: 0 },
   { id: 'pack2', vnd: 20000, coins: 200, bonus: 20, popular: true },
   { id: 'pack3', vnd: 50000, coins: 500, bonus: 100 },
+  { id: 'monthly', vnd: 99000, coins: 1500, bonus: 300, monthly: true },
   { id: 'pack4', vnd: 100000, coins: 1000, bonus: 300 },
   { id: 'pack5', vnd: 200000, coins: 2000, bonus: 800, vip: true }
 ];
@@ -112,9 +125,19 @@ export default function VIPTopUpPage() {
                   >
                     {isSelected && <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 blur-2xl"></div>}
                     
+                    {pack.starter && (
+                      <div className="absolute top-0 right-0 bg-gradient-to-l from-blue-500 to-cyan-400 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-3xl rounded-tr-3xl flex items-center gap-1.5 shadow-lg">
+                        Khởi Đầu
+                      </div>
+                    )}
                     {pack.popular && (
                       <div className="absolute top-0 right-0 bg-gradient-to-l from-primary to-orange-500 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-3xl rounded-tr-3xl flex items-center gap-1.5 shadow-lg">
                         <Sparkles className="size-3" /> BEST
+                      </div>
+                    )}
+                    {pack.monthly && (
+                      <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-pink-500 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-3xl rounded-tr-3xl flex items-center gap-1.5 shadow-lg">
+                        <Sparkles className="size-3" /> Combo Tháng
                       </div>
                     )}
                     {pack.vip && (
