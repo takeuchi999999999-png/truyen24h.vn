@@ -10,23 +10,13 @@
  *   price?: number (default 50 if VIP),
  *   aiAssisted?: boolean
  * }
+ *
+ * Auth: admin only (x-admin-token or x-admin-email).
+ * DB: Firebase Admin SDK — bypasses Firestore security rules.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps } from 'firebase/app';
-import {
-  getFirestore, doc, setDoc, updateDoc, serverTimestamp, writeBatch, getDoc
-} from 'firebase/firestore';
 import { authorizeAdmin } from '@/lib/apiAuth';
-
-const firebaseConfig = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-};
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
+import { adminDb, serverTimestamp } from '@/lib/firebaseAdmin';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -71,10 +61,10 @@ export async function POST(req: NextRequest) {
       aiAssisted,
     };
 
-    // Single batch: write chapter + bump novel meta
-    const batch = writeBatch(db);
-    batch.set(doc(db, `novels/${novelId}/chapters`, chapterId), chapterDoc);
-    batch.update(doc(db, 'novels', novelId), {
+    const db = adminDb();
+    const batch = db.batch();
+    batch.set(db.doc(`novels/${novelId}/chapters/${chapterId}`), chapterDoc);
+    batch.update(db.doc(`novels/${novelId}`), {
       latestChapterNumber: num,
       updatedAt: serverTimestamp(),
       lastUpdated: new Date().toISOString(),

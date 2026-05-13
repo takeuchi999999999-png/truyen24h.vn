@@ -8,28 +8,19 @@
  *   slug?: string,            // optional - auto-generated from title if omitted
  *   title, author, description, genres,
  *   coverUrl?, bannerUrl?,
+ *   coverPrompt?, hook?,
  *   tags?: string[],
  *   isHot?: boolean,
  *   aiAssisted?: boolean      // defaults true when called from AI pipeline
  * }
  *
  * Auth: admin only (x-admin-token or x-admin-email).
+ * DB: Firebase Admin SDK — bypasses Firestore security rules.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { authorizeAdmin } from '@/lib/apiAuth';
+import { adminDb, serverTimestamp } from '@/lib/firebaseAdmin';
 import { buildCoverUrl, buildBannerUrl } from '@/services/aiCoverService';
-
-const firebaseConfig = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-};
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -79,8 +70,7 @@ export async function POST(req: NextRequest) {
     const slug = (explicitSlug || slugify(title)) + (explicitSlug ? '' : `-${Date.now().toString(36)}`);
 
     // Auto-generate cover/banner from the AI prompt when the caller didn't
-    // supply explicit URLs. This way every AI-generated novel ships with
-    // a unique cover without an extra API round-trip.
+    // supply explicit URLs.
     const promptForImage = coverPrompt || `${title} — ${genres.join(', ')}`;
     const coverUrl = explicitCover || buildCoverUrl(promptForImage);
     const bannerUrl = explicitBanner || buildBannerUrl(promptForImage, title);
@@ -110,7 +100,7 @@ export async function POST(req: NextRequest) {
       updatedAt: serverTimestamp(),
     };
 
-    await setDoc(doc(db, 'novels', slug), novelDoc, { merge: true });
+    await adminDb().collection('novels').doc(slug).set(novelDoc, { merge: true });
 
     return NextResponse.json({ ok: true, slug, novel: novelDoc });
   } catch (err: any) {

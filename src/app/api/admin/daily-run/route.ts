@@ -7,22 +7,18 @@
  *   3. Pick M existing AI novels and write +1 chapter for each
  *   4. Write everything to Firestore
  *
- * Typically wired to a scheduled task running ~8am Asia/Ho_Chi_Minh.
+ * Used by the in-browser AI Studio button. Cron uses the GET variant
+ * at /api/admin/daily-run-cron with bearer-token auth.
  *
  * Body (all optional):
  *   { newNovels?: number, continueNovels?: number, dryRun?: boolean }
  *
- * Auth: admin only.
- *
- * Returns a summary suitable for posting back in chat / Slack.
+ * Auth: admin email (via authorizeAdmin).
+ * DB: Firebase Admin SDK — bypasses Firestore security rules.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps } from 'firebase/app';
-import {
-  getFirestore, collection, getDocs, query, where, orderBy, limit,
-  doc, setDoc, writeBatch, serverTimestamp,
-} from 'firebase/firestore';
 import { authorizeAdmin } from '@/lib/apiAuth';
+import { adminDb, serverTimestamp } from '@/lib/firebaseAdmin';
 import {
   discoverTrendingTopics,
   generateNovelOutline,
@@ -30,18 +26,8 @@ import {
 } from '@/services/aiStoryService';
 import { buildCoverUrl, buildBannerUrl } from '@/services/aiCoverService';
 
-const firebaseConfig = {
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-};
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
-
 export const runtime = 'nodejs';
-export const maxDuration = 300; // long because we call Gemini multiple times
+export const maxDuration = 300;
 
 function slugify(input: string): string {
   return input
@@ -63,9 +49,10 @@ export async function POST(req: NextRequest) {
   const continueNovels = Math.min(Math.max(Number(body.continueNovels) || 5, 0), 20);
   const dryRun = !!body.dryRun;
 
-  const startedAt = new Date().toISOString();
+  const db = adminDb();
+
   const summary = {
-    startedAt,
+    startedAt: new Date().toISOString(),
     finishedAt: '',
     newNovelsCreated: [] as Array<{ slug: string; title: string; chapters: number }>,
     chaptersContinued: [] as Array<{ slug: string; chapterNumber: number }>,
@@ -79,17 +66,13 @@ export async function POST(req: NextRequest) {
       const topics = await discoverTrendingTopics({ count: newNovels });
       for (const t of topics) {
         try {
-          const outline = await generateNovelOutline({
-            topic: t.topic,
-            genres: t.suggestedGenres,
-          });
+          const outline = await generateNovelOutline({ topic: t.topic, genres: t.suggestedGenres });
           const slug = `${slugify(outline.title)}-${Date.now().toString(36).slice(-4)}`;
-
-          const coverUrl = buildCoverUrl(outline.coverPrompt, { seed: undefined });
+          const coverUrl = buildCoverUrl(outline.coverPrompt);
           const bannerUrl = buildBannerUrl(outline.coverPrompt, outline.title);
 
           if (!dryRun) {
-            await setDoc(doc(db, 'novels', slug), {
+            await db.collection('novels').doc(slug).set({
               id: slug,
               title: outline.title,
               author: outline.author,
@@ -114,7 +97,6 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          // 2 chapters for fresh momentum
           let previousSummary = '';
           let chaptersWritten = 0;
           for (let n = 1; n <= 2; n++) {
@@ -129,21 +111,22 @@ export async function POST(req: NextRequest) {
             previousSummary = chapter.cliffhanger;
 
             if (!dryRun) {
-              const batch = writeBatch(db);
-              batch.set(doc(db, `novels/${slug}/chapters`, `c${n}`), {
+              const batch = db.batch();
+              batch.set(db.doc(`novels/${slug}/chapters/c${n}`), {
                 id: `c${n}`,
                 title: chapter.title,
                 content: chapter.content,
                 chapterNumber: n,
-                isVip: false, // first 2 chapters always free
+                isVip: false,
                 price: 0,
                 publishDate: serverTimestamp(),
                 aiAssisted: true,
               });
-              batch.update(doc(db, 'novels', slug), {
+              batch.update(db.doc(`novels/${slug}`), {
                 latestChapterNumber: n,
                 updatedAt: serverTimestamp(),
                 lastUpdated: new Date().toISOString(),
+                lastCliffhanger: chapter.cliffhanger,
               });
               await batch.commit();
             }
@@ -159,14 +142,12 @@ export async function POST(req: NextRequest) {
 
     /* ---------- 2. CONTINUE EXISTING ---------- */
     if (continueNovels > 0) {
-      const novelsQuery = query(
-        collection(db, 'novels'),
-        where('aiAssisted', '==', true),
-        where('status', '==', 'Đang ra'),
-        orderBy('updatedAt', 'asc'), // oldest first to keep all alive
-        limit(continueNovels)
-      );
-      const snap = await getDocs(novelsQuery);
+      const snap = await db.collection('novels')
+        .where('aiAssisted', '==', true)
+        .where('status', '==', 'Đang ra')
+        .orderBy('updatedAt', 'asc')
+        .limit(continueNovels)
+        .get();
       for (const docSnap of snap.docs) {
         try {
           const data = docSnap.data() as any;
@@ -184,8 +165,8 @@ export async function POST(req: NextRequest) {
           const price = isVip ? 50 : 0;
 
           if (!dryRun) {
-            const batch = writeBatch(db);
-            batch.set(doc(db, `novels/${docSnap.id}/chapters`, `c${nextNum}`), {
+            const batch = db.batch();
+            batch.set(db.doc(`novels/${docSnap.id}/chapters/c${nextNum}`), {
               id: `c${nextNum}`,
               title: chapter.title,
               content: chapter.content,
@@ -195,7 +176,7 @@ export async function POST(req: NextRequest) {
               publishDate: serverTimestamp(),
               aiAssisted: true,
             });
-            batch.update(doc(db, 'novels', docSnap.id), {
+            batch.update(db.doc(`novels/${docSnap.id}`), {
               latestChapterNumber: nextNum,
               updatedAt: serverTimestamp(),
               lastUpdated: new Date().toISOString(),
