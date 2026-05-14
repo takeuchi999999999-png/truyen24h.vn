@@ -7,7 +7,7 @@ import { collection, query, onSnapshot, deleteDoc, doc, getDoc, setDoc, serverTi
 import { getDailyGreeting } from '../services/geminiService';
 
 interface BookshelfViewProps {
-  onNovelSelect: (novel: Novel) => void;
+  // getDailyGreeting moved to /api/ai/greeting server route
   user: User | null;
   onLogin: () => void;
 }
@@ -33,7 +33,7 @@ export default function BookshelfView({ onNovelSelect, user, onLogin }: Bookshel
 
   useEffect(() => {
     if (user) {
-      getDailyGreeting(user.displayName || 'Bạn').then(setGreeting);
+              fetch('/api/ai/greeting', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userName: user.displayName || 'Bạn'}) }).then(r => r.ok ? r.json() : null).then(d => d?.greeting && setGreeting(d.greeting));
       checkCheckInStatus();
     }
   }, [user]);
