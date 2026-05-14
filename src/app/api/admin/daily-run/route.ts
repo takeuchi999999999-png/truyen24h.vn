@@ -27,7 +27,9 @@ import {
 import { buildCoverUrl, buildBannerUrl } from '@/services/aiCoverService';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+// Vercel Hobby plan caps at 60s; setting 300 silently breaks the build.
+// Daily-run keeps payload small (1 novel + 3 chapters) to fit comfortably.
+export const maxDuration = 60;
 
 function slugify(input: string): string {
   return input

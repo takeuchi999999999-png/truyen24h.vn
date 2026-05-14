@@ -283,4 +283,9 @@ export default function AiStudioClient() {
 
 function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="p-4 bg-background/40
+    <div className="p-4 bg-background/40 rounded-xl">
+      <div className={`text-3xl font-black ${color}`}>{value}</div>
+      <div className="text-xs text-muted uppercase tracking-wider">{label}</div>
+    </div>
+  );
+}

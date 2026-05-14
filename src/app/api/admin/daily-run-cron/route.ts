@@ -24,7 +24,8 @@ import {
 import { buildCoverUrl, buildBannerUrl } from '@/services/aiCoverService';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+// Vercel Hobby plan caps maxDuration at 60s.
+export const maxDuration = 60;
 
 function slugify(input: string): string {
   return input

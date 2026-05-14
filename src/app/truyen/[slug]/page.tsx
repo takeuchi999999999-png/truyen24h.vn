@@ -47,4 +47,35 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: SITE_NAME,
       images: [{ url: coverUrl, width: 800, height: 600, alt: `Bìa truyện ${data.title}` }],
       locale: 'vi_VN',
-      t
+      type: 'article',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: data.title,
+      description: (data.description || '').slice(0, 150) + '...',
+      images: [coverUrl],
+    },
+  };
+}
+
+export default async function NovelPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const novelData = await fetchNovel(slug);
+
+  if (!novelData) {
+    return (
+      <>
+        <TopNavBarClientWrapper />
+        <div className="p-20 text-center text-white">Truyện không tồn tại hoặc đã bị xóa.</div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <TopNavBarClientWrapper />
+      <NovelJsonLd novel={novelData} />
+      <NovelDetailClient novel={novelData} />
+    </>
+  );
+}

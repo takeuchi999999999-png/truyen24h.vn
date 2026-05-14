@@ -39,4 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
     return [...staticPages, ...novelUrls];
   } catch (err) {
-    // Fa
+    // Fall back to static-only if admin creds aren't configured yet.
+    return staticPages;
+  }
+}

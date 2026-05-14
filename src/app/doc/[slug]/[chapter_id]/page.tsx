@@ -74,4 +74,14 @@ export default async function ChapterPage({ params }: { params: Promise<{ slug: 
   const result = await fetchNovelAndChapter(slug, chapter_id);
 
   if (!result || !result.chapter) {
-    return <div className="p-20 text-center text-white">Chương nội dung không tồn tại ho�
+    return <div className="p-20 text-center text-white">Chương nội dung không tồn tại hoặc đã phân quyền.</div>;
+  }
+
+  const { novel, chapter } = result as any;
+  return (
+    <>
+      <ChapterJsonLd novel={novel} chapter={chapter} />
+      <ReaderClient novel={novel} chapter={chapter} />
+    </>
+  );
+}
