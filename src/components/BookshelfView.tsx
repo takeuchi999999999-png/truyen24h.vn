@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, onSnapshot, deleteDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getDailyGreeting } from '../services/geminiService';
+// import getDailyGreeting removed - use fetch('/api/ai/greeting') instead
 
 interface BookshelfViewProps {
-  // getDailyGreeting moved to /api/ai/greeting server route
+  // import { getDailyGreeting } removed - now using /api/ai/greeting server route
   user: User | null;
   onLogin: () => void;
 }
