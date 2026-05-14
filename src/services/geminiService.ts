@@ -9,7 +9,7 @@
     * It uses GEMINI_API_KEY (server-only env var).
     * NEVER use NEXT_PUBLIC_GEMINI_API_KEY — that exposes the key to the browser.
     */
-   import "server-only";
+   // NOTE: This service runs on server-side only (API routes). Do NOT call Gemini SDK directly from Client Components.
 import { GoogleGenAI } from "@google/genai";
 import { Novel } from "../types";
 
