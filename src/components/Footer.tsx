@@ -42,6 +42,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blog" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2 group">
+                  <ChevronRight className="size-3 text-accent group-hover:text-primary transition-colors" /> Blog & Review
+                </Link>
+              </li>
+              <li>
                 <Link href="/gioi-thieu" className="text-sm text-muted hover:text-primary transition-colors flex items-center gap-2 group">
                   <ChevronRight className="size-3 text-accent group-hover:text-primary transition-colors" /> Giới Thiệu
                 </Link>

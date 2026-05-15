@@ -59,5 +59,13 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'PENDING';
       allow update, delete: if false;
     }
+
+    // 6. Blog posts — đọc công khai. Ghi/sửa/xoá chỉ qua Admin SDK
+    // (Admin SDK bypass rules) hoặc người dùng đã login (kiểm soát thêm
+    // bằng email whitelist phía server route).
+    match /blog_posts/{postId} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

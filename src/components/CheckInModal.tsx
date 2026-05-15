@@ -4,7 +4,7 @@ import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { Sparkles, Calendar, Gift, X, CheckCircle2, Loader2 } from 'lucide-react';
-// getDailyGreeting is now called via /api/ai/greeting (server proxy — no API key in browser)
+import { getDailyGreeting } from '../services/geminiService';
 
 interface CheckInModalProps {
   user: User;
@@ -29,8 +29,7 @@ export default function CheckInModal({ user, onClose }: CheckInModalProps) {
           setHasCheckedInToday(userData.lastCheckIn === today);
         }
         
-                const res = await fetch('/api/ai/greeting', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userName: user.displayName || 'Bạn' }) });
-                const aiGreeting = res.ok ? (await res.json()).greeting : `Chào mừng trở lại, ${user.displayName || 'Bạn'}!`;
+        const aiGreeting = await getDailyGreeting(user.displayName || 'Bạn');
         setGreeting(aiGreeting);
       } catch (error) {
         console.error(error);

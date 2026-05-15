@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, query, onSnapshot, deleteDoc, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-// import getDailyGreeting removed - use fetch('/api/ai/greeting') instead
+import { getDailyGreeting } from '../services/geminiService';
 
 interface BookshelfViewProps {
-  // import { getDailyGreeting } removed - now using /api/ai/greeting server route
+  onNovelSelect: (novel: Novel) => void;
   user: User | null;
   onLogin: () => void;
 }
@@ -33,7 +33,7 @@ export default function BookshelfView({ onNovelSelect, user, onLogin }: Bookshel
 
   useEffect(() => {
     if (user) {
-              fetch('/api/ai/greeting', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userName: user.displayName || 'Bạn'}) }).then(r => r.ok ? r.json() : null).then(d => d?.greeting && setGreeting(d.greeting));
+      getDailyGreeting(user.displayName || 'Bạn').then(setGreeting);
       checkCheckInStatus();
     }
   }, [user]);
