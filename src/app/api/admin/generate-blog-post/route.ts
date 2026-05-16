@@ -2,12 +2,12 @@
  * POST /api/admin/generate-blog-post
  *
  * Generates an AI blog post and writes it to Firestore collection
- * `blog_posts`. Two modes:
- *   - body.kind = 'review'   → pick a random AI novel and review it
- *   - body.kind = 'listicle' → "Top N truyện {genre} hay nhất tháng X"
+ * blog_posts. Two modes:
+ *   - body.kind = 'review'   - pick a random AI novel and review it
+ *   - body.kind = 'listicle' - "Top N truyen {genre} hay nhat thang X"
  *
  * Body (all optional except kind):
- *   { kind: 'review' | 'listicle', genre?: string, novelSlug?: string, count?: number }
+ *   { kind, genre?, novelSlug?, count? }
  *
  * Auth: admin only.
  */
@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
     const db = adminDb();
 
     let post: any;
-    let novelSlugForLink: string | undefined;
 
     if (kind === 'review') {
       // Pick novel: explicit slug from body, or a random recent AI novel
@@ -52,20 +51,19 @@ export async function POST(req: NextRequest) {
         }
       }
       if (!novel) {
-        return NextResponse.json({ error: 'Không tìm thấy truyện AI nào để review' }, { status: 404 });
+        return NextResponse.json({ error: 'Khong tim thay truyen AI nao de review' }, { status: 404 });
       }
-      novelSlugForLink = novel.id;
       const generated = await generateNovelReviewPost({
         novelTitle: novel.title,
         novelSlug: novel.id,
         novelDescription: novel.description,
         genres: novel.genres || [],
-        author: novel.author || 'Tác giả ẩn danh',
+        author: novel.author || 'Tac gia an danh',
       });
       post = { ...generated, kind: 'review', relatedNovelSlug: novel.id };
     } else {
       // Listicle for a genre
-      const genre = body.genre || 'ngôn tình';
+      const genre = body.genre || 'Ngon Tinh';
       const count = Math.min(Math.max(Number(body.count) || 10, 3), 15);
       const snap = await db.collection('novels')
         .where('genres', 'array-contains', genre)
@@ -78,7 +76,7 @@ export async function POST(req: NextRequest) {
       });
       if (novels.length < 3) {
         return NextResponse.json(
-          { error: `Cần ít nhất 3 truyện thể loại "${genre}" để làm listicle. Hiện có ${novels.length}.` },
+          { error: 'Can it nhat 3 truyen the loai "' + genre + '" de lam listicle. Hien co ' + novels.length + '.' },
           { status: 400 }
         );
       }

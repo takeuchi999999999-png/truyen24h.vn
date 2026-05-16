@@ -59,6 +59,4 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [...staticPages, ...novelUrls, ...blogUrls];
   } catch (err) {
     // Fall back to static-only if admin creds aren't configured yet.
-    return staticPages;
-  }
-}
+    return staticPages
